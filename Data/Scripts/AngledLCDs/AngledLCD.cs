@@ -9,22 +9,31 @@ using VRage.Game.Entity;
 using VRageMath;
 using Digi;
 using Sandbox.Game.Components;
+using Sandbox.ModAPI.Interfaces.Terminal;
+using VRage.Utils;
 
 namespace Natomic.AngledLCDs
 {
     // This object gets attached to entities depending on their type and optionally subtype aswell.
     // The 2nd arg, "false", is for entity-attached update if set to true which is not recommended, see for more info: https://forum.keenswh.com/threads/modapi-changes-jan-26.7392280/
     // Remove any method that you don't need, they're only there to show what you can use, and also remove comments you've read as they're only for example purposes and don't make sense in a final mod.
-    [MyEntityComponentDescriptor(typeof(MyObjectBuilder_TextPanel), false )]
-    public class AngledLCD : MyGameLogicComponent
+    [MyEntityComponentDescriptor(typeof(MyObjectBuilder_TextPanel), false)]
+    public class AngledLCDTextPanel : AngledLCD<IMyTextPanel> { }
+    public class AngledLCD<T> : MyGameLogicComponent
     {
         private IMyCubeBlock block; // storing the entity as a block reference to avoid re-casting it every time it's needed, this is the lowest type a block entity can be.
-            private const string SUBPART_ROT_ID = "screen";
-            private bool foundSubpart = false;
-            private Matrix subpartLocalMatrix;
-        bool rotated_ = false;
-        MyRenderComponentScreenAreas screenRender;
-        bool setup_ = false;
+        private bool foundSubpart = false;
+        private Matrix subpartLocalMatrix;
+        bool rotated_ = true;
+        private float azimuth_degs_ = 0f;
+        private static bool controls_created_ = false;
+        public float AzimuthDegs { set
+            {
+                azimuth_degs_ = value;
+                rotated_ = false;
+            } get { return azimuth_degs_; } }
+        private Matrix origin_;
+        
 
         public override void Init(MyObjectBuilder_EntityBase objectBuilder)
         {
@@ -32,23 +41,41 @@ namespace Natomic.AngledLCDs
             // NOTE the objectBuilder arg is not the Entity's but the component's, and since the component wasn't loaded from an OB that means it's always null, which it is (AFAIK).
 
             block = (IMyCubeBlock)Entity;
-            NeedsUpdate = MyEntityUpdateEnum.BEFORE_NEXT_FRAME; // allow UpdateOnceBeforeFrame() to execute, remove if not needed
-            Log.Info("Initied block");
-           
+            NeedsUpdate = MyEntityUpdateEnum.EACH_10TH_FRAME; // allow UpdateOnceBeforeFrame() to execute, remove if not needed
+
+            if (!controls_created_)
+            {
+                CreateTermControls();
+            }
+
+        }
+        private static void CreateTermControls()
+        {
+            var xrot = MyAPIGateway.TerminalControls.CreateControl<IMyTerminalControlSlider, T>("xrot_slider");
+            xrot.Title = MyStringId.GetOrCompute("Azimuth rotation");
+            xrot.Tooltip = MyStringId.GetOrCompute("-180 to 180 in degrees");
+            xrot.SetLimits(-180, 180);
+            xrot.Getter = b => b.GameLogic.GetAs<AngledLCD<T>>().AzimuthDegs;
+            xrot.Setter = (b, value) =>b.GameLogic.GetAs<AngledLCD<T>>().AzimuthDegs = value;
+            xrot.Writer = (b, str) => str.Append(Math.Round(b.GameLogic.GetAs<AngledLCD<T>>().AzimuthDegs, 2).ToString());
+
+            MyAPIGateway.TerminalControls.AddControl<T>(xrot);
+
+            controls_created_ = true;
         }
 
         public override void UpdateOnceBeforeFrame()
         {
             // first update, remove if not needed
 
-            if(block.CubeGrid?.Physics == null) // ignore projected and other non-physical grids
+            if (block.CubeGrid?.Physics == null) // ignore projected and other non-physical grids
                 return;
 
             // do stuff
 
             // you can access stuff from session via Example_Session.Instance.[...]
 
-            NeedsUpdate = MyEntityUpdateEnum.EACH_FRAME | MyEntityUpdateEnum.EACH_100TH_FRAME; // allow UpdateAfterSimulation() and UpdateAfterSimulation100() to execute, remove if not needed
+            //NeedsUpdate = MyEntityUpdateEnum.EACH_FRAME | MyEntityUpdateEnum.EACH_100TH_FRAME; // allow UpdateAfterSimulation() and UpdateAfterSimulation100() to execute, remove if not needed
         }
 
         public override void MarkForClose()
@@ -56,30 +83,38 @@ namespace Natomic.AngledLCDs
             // called when entity is about to be removed for whatever reason (block destroyed, entity deleted, ship despawn because of sync range, etc)
         }
 
-        public override void UpdateBeforeSimulation()
+        public override void UpdateBeforeSimulation10()
         {
+
             try
             {
                 // executed 60 times a second after physics simulation, unless game is paused.
                 // triggered only if NeedsUpdate contains MyEntityUpdateEnum.EACH_FRAME.
 
-               if (!rotated_)
+                if (!rotated_)
                 {
 
                     if (!foundSubpart)
                     {
                         foundSubpart = true;
-                        subpartLocalMatrix = block.PositionComp.LocalMatrixRef;
-                        subpartLocalMatrix = Matrix.Normalize(subpartLocalMatrix);
+                        origin_ = block.PositionComp.LocalMatrixRef;
+                        origin_ = Matrix.Normalize(origin_);
                     }
-                    var val = 45;
+                    subpartLocalMatrix = origin_;
                     var origin = new Vector3D(subpartLocalMatrix.Translation);
                     subpartLocalMatrix *= Matrix.CreateTranslation(-origin); // Move it to the origin
-                    subpartLocalMatrix *= Matrix.CreateRotationY(MathHelper.ToRadians(val)); // Pivot around 0, 0
+                    subpartLocalMatrix *= Matrix.CreateRotationY(MathHelper.ToRadians(AzimuthDegs)); // Pivot around 0, 0
                     subpartLocalMatrix *= Matrix.CreateTranslation(origin); // Move it back
                     subpartLocalMatrix = Matrix.Normalize(subpartLocalMatrix);
 
                     block.PositionComp.SetLocalMatrix(ref subpartLocalMatrix);
+
+                    var b = block as IMyFunctionalBlock;
+                    if (b != null) // This is hacky af but turning it off and on again updates it apparently
+                    {
+                        b.Enabled = false;
+                        b.Enabled = true;
+                    }
                     rotated_ = true;
                 }
 
@@ -96,17 +131,17 @@ namespace Natomic.AngledLCDs
         {
             // executed 60 times a second before physics simulation, unless game is paused.
             // triggered only if NeedsUpdate contains MyEntityUpdateEnum.EACH_FRAME.
-          /*  MyEntitySubpart sp;
-            if (!setup_ && Entity.TryGetSubpart(SUBPART_ROT_ID, out sp))
-            {
-                screenRender = new MyRenderComponentScreenAreas(sp);
-                sp.Render.ContainerBase.Add(screenRender);
-                screenRender = sp.Render.GetAs<MyRenderComponentScreenAreas>();
-                screenRender.AddScreenArea(sp.Render.RenderObjectIDs, "ScreenArea");
-                screenRender.UpdateModelProperties();
-                setup_ = true;
+            /*  MyEntitySubpart sp;
+              if (!setup_ && Entity.TryGetSubpart(SUBPART_ROT_ID, out sp))
+              {
+                  screenRender = new MyRenderComponentScreenAreas(sp);
+                  sp.Render.ContainerBase.Add(screenRender);
+                  screenRender = sp.Render.GetAs<MyRenderComponentScreenAreas>();
+                  screenRender.AddScreenArea(sp.Render.RenderObjectIDs, "ScreenArea");
+                  screenRender.UpdateModelProperties();
+                  setup_ = true;
 
-            }*/
+              }*/
         }
 
         public override void UpdateAfterSimulation100()
