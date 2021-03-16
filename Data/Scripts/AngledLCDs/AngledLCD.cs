@@ -11,6 +11,7 @@ using Digi;
 using Sandbox.Game.Components;
 using Sandbox.ModAPI.Interfaces.Terminal;
 using VRage.Utils;
+using VRage.Game.ModAPI.Ingame.Utilities;
 
 namespace Natomic.AngledLCDs
 {
@@ -19,9 +20,9 @@ namespace Natomic.AngledLCDs
     // Remove any method that you don't need, they're only there to show what you can use, and also remove comments you've read as they're only for example purposes and don't make sense in a final mod.
     [MyEntityComponentDescriptor(typeof(MyObjectBuilder_TextPanel), false)]
     public class AngledLCDTextPanel : AngledLCD<IMyTextPanel> { }
-    public class AngledLCD<T> : MyGameLogicComponent
+    public class AngledLCD<T> : MyGameLogicComponent where T: IMyTerminalBlock
     {
-        private IMyCubeBlock block; // storing the entity as a block reference to avoid re-casting it every time it's needed, this is the lowest type a block entity can be.
+        private T block; // storing the entity as a block reference to avoid re-casting it every time it's needed, this is the lowest type a block entity can be.
         private bool foundSubpart = false;
         private Matrix subpartLocalMatrix;
         bool rotated_ = true;
@@ -33,6 +34,9 @@ namespace Natomic.AngledLCDs
                 rotated_ = false;
             } get { return azimuth_degs_; } }
         private Matrix origin_;
+        private MyIni ini_helper_ = new MyIni();
+        private const string INI_SEC_NAME = "AngledLCDs Save Data";
+        private readonly MyIniKey azimuth_key_ = new MyIniKey(INI_SEC_NAME, "azimuth");
         
 
         public override void Init(MyObjectBuilder_EntityBase objectBuilder)
@@ -40,8 +44,8 @@ namespace Natomic.AngledLCDs
             // this method is called async! always do stuff in the first update unless you're sure it must be in this one.
             // NOTE the objectBuilder arg is not the Entity's but the component's, and since the component wasn't loaded from an OB that means it's always null, which it is (AFAIK).
 
-            block = (IMyCubeBlock)Entity;
-            NeedsUpdate = MyEntityUpdateEnum.EACH_10TH_FRAME; // allow UpdateOnceBeforeFrame() to execute, remove if not needed
+            block = (T)Entity;
+            NeedsUpdate = MyEntityUpdateEnum.BEFORE_NEXT_FRAME;
 
             if (!controls_created_)
             {
@@ -56,7 +60,12 @@ namespace Natomic.AngledLCDs
             xrot.Tooltip = MyStringId.GetOrCompute("-180 to 180 in degrees");
             xrot.SetLimits(-180, 180);
             xrot.Getter = b => b.GameLogic.GetAs<AngledLCD<T>>().AzimuthDegs;
-            xrot.Setter = (b, value) =>b.GameLogic.GetAs<AngledLCD<T>>().AzimuthDegs = value;
+            xrot.Setter = (b, value) =>
+            {
+                var lcd = b.GameLogic.GetAs<AngledLCD<T>>();
+                lcd.AzimuthDegs = value;
+                lcd.SaveData();
+            };
             xrot.Writer = (b, str) => str.Append(Math.Round(b.GameLogic.GetAs<AngledLCD<T>>().AzimuthDegs, 2).ToString());
 
             MyAPIGateway.TerminalControls.AddControl<T>(xrot);
@@ -66,31 +75,38 @@ namespace Natomic.AngledLCDs
 
         public override void UpdateOnceBeforeFrame()
         {
-            // first update, remove if not needed
-
             if (block.CubeGrid?.Physics == null) // ignore projected and other non-physical grids
                 return;
 
-            // do stuff
-
-            // you can access stuff from session via Example_Session.Instance.[...]
-
-            //NeedsUpdate = MyEntityUpdateEnum.EACH_FRAME | MyEntityUpdateEnum.EACH_100TH_FRAME; // allow UpdateAfterSimulation() and UpdateAfterSimulation100() to execute, remove if not needed
+            NeedsUpdate = MyEntityUpdateEnum.EACH_10TH_FRAME;
+            LoadData();
         }
-
-        public override void MarkForClose()
+        
+        private void LoadData()
         {
-            // called when entity is about to be removed for whatever reason (block destroyed, entity deleted, ship despawn because of sync range, etc)
+            var data = block.CustomData;
+            if (ini_helper_.TryParse(data))
+            {
+                AzimuthDegs = (float)ini_helper_.Get(azimuth_key_).ToDouble();
+            } else
+            {
+                SaveData();
+            }
+
         }
+        private void SaveData()
+        {
+            ini_helper_.AddSection(INI_SEC_NAME);
+            ini_helper_.Set(azimuth_key_, azimuth_degs_);
+
+            block.CustomData = ini_helper_.ToString();
+        }
+
 
         public override void UpdateBeforeSimulation10()
         {
-
             try
             {
-                // executed 60 times a second after physics simulation, unless game is paused.
-                // triggered only if NeedsUpdate contains MyEntityUpdateEnum.EACH_FRAME.
-
                 if (!rotated_)
                 {
 
