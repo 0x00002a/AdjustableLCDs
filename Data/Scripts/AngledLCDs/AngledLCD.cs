@@ -63,37 +63,23 @@ namespace Natomic.AngledLCDs
                 // executed 60 times a second after physics simulation, unless game is paused.
                 // triggered only if NeedsUpdate contains MyEntityUpdateEnum.EACH_FRAME.
 
-                var shouldSpin = block.IsWorking;
-
-                //        var camPos = MyAPIGateway.Session.Camera.WorldMatrix.Translation;
-               /* MyEntitySubpart sp;
-                if (Entity.TryGetSubpart(SUBPART_ROT_ID, out sp) && !rotated_)
-                {
-                    if (!foundSubpart)
-                    {
-                        foundSubpart = true;
-                        subpartLocalMatrix = sp.PositionComp.LocalMatrix;
-                        subpartLocalMatrix = Matrix.Normalize(subpartLocalMatrix);
-                    }
-                    subpartLocalMatrix *= Matrix.CreateFromAxisAngle(subpartLocalMatrix.Up, MathHelper.ToRadians(-45));
-                    subpartLocalMatrix = Matrix.Normalize(subpartLocalMatrix);
-
-                    sp.PositionComp.LocalMatrix = subpartLocalMatrix;
-                    rotated_ = true;
-                }*/
                if (!rotated_)
                 {
 
                     if (!foundSubpart)
                     {
                         foundSubpart = true;
-                        subpartLocalMatrix = block.PositionComp.LocalMatrix;
+                        subpartLocalMatrix = block.PositionComp.LocalMatrixRef;
                         subpartLocalMatrix = Matrix.Normalize(subpartLocalMatrix);
                     }
-                    subpartLocalMatrix *= Matrix.CreateFromAxisAngle(subpartLocalMatrix.Up, MathHelper.ToRadians(-45));
+                    var val = 45;
+                    var origin = new Vector3D(subpartLocalMatrix.Translation);
+                    subpartLocalMatrix *= Matrix.CreateTranslation(-origin); // Move it to the origin
+                    subpartLocalMatrix *= Matrix.CreateRotationY(MathHelper.ToRadians(val)); // Pivot around 0, 0
+                    subpartLocalMatrix *= Matrix.CreateTranslation(origin); // Move it back
                     subpartLocalMatrix = Matrix.Normalize(subpartLocalMatrix);
 
-                    block.PositionComp.LocalMatrix = subpartLocalMatrix;
+                    block.PositionComp.SetLocalMatrix(ref subpartLocalMatrix);
                     rotated_ = true;
                 }
 
