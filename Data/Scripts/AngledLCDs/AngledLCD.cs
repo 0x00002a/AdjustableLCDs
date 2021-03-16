@@ -27,16 +27,27 @@ namespace Natomic.AngledLCDs
         private Matrix subpartLocalMatrix;
         bool rotated_ = true;
         private float azimuth_degs_ = 0f;
+        private float pitch_degs_ = 0f;
         private static bool controls_created_ = false;
         public float AzimuthDegs { set
             {
                 azimuth_degs_ = value;
                 rotated_ = false;
             } get { return azimuth_degs_; } }
+        public float PitchDegs
+        {
+            set
+            {
+                pitch_degs_ = value;
+                rotated_ = false;
+            }
+            get { return pitch_degs_; }
+        }
         private Matrix origin_;
         private MyIni ini_helper_ = new MyIni();
         private const string INI_SEC_NAME = "AngledLCDs Save Data";
         private readonly MyIniKey azimuth_key_ = new MyIniKey(INI_SEC_NAME, "azimuth");
+        private readonly MyIniKey pitch_key_ = new MyIniKey(INI_SEC_NAME, "pitch");
         
 
         public override void Init(MyObjectBuilder_EntityBase objectBuilder)
@@ -68,7 +79,23 @@ namespace Natomic.AngledLCDs
             };
             xrot.Writer = (b, str) => str.Append(Math.Round(b.GameLogic.GetAs<AngledLCD<T>>().AzimuthDegs, 2).ToString());
 
+            var zrot = MyAPIGateway.TerminalControls.CreateControl<IMyTerminalControlSlider, T>("zrot_slider");
+            zrot.Title = MyStringId.GetOrCompute("Pitch");
+            zrot.Tooltip = MyStringId.GetOrCompute("-180 to 180 in degrees");
+            zrot.SetLimits(-180, 180);
+            zrot.Getter = b => b.GameLogic.GetAs<AngledLCD<T>>().PitchDegs;
+            zrot.Setter = (b, value) =>
+            {
+                var lcd = b.GameLogic.GetAs<AngledLCD<T>>();
+                lcd.PitchDegs = value;
+                lcd.SaveData();
+            };
+            zrot.Writer = (b, str) => str.Append(Math.Round(b.GameLogic.GetAs<AngledLCD<T>>().PitchDegs, 2).ToString());
+
+            
+
             MyAPIGateway.TerminalControls.AddControl<T>(xrot);
+            MyAPIGateway.TerminalControls.AddControl<T>(zrot);
 
             controls_created_ = true;
         }
@@ -98,10 +125,20 @@ namespace Natomic.AngledLCDs
         {
             ini_helper_.AddSection(INI_SEC_NAME);
             ini_helper_.Set(azimuth_key_, azimuth_degs_);
+            ini_helper_.Set(pitch_key_, pitch_degs_);
 
             block.CustomData = ini_helper_.ToString();
         }
 
+        private void OriginRotate(ref Matrix by, Vector3D origin, Matrix translation)
+        {
+            by *= Matrix.CreateTranslation(-origin); // Move it to the origin
+             
+            by *= translation; // Pivot around 0, 0
+
+            by *= Matrix.CreateTranslation(origin); // Move it back
+ 
+        }
 
         public override void UpdateBeforeSimulation10()
         {
@@ -116,11 +153,8 @@ namespace Natomic.AngledLCDs
                         origin_ = block.PositionComp.LocalMatrixRef;
                         origin_ = Matrix.Normalize(origin_);
                     }
-                    subpartLocalMatrix = origin_;
-                    var origin = new Vector3D(subpartLocalMatrix.Translation);
-                    subpartLocalMatrix *= Matrix.CreateTranslation(-origin); // Move it to the origin
-                    subpartLocalMatrix *= Matrix.CreateRotationY(MathHelper.ToRadians(AzimuthDegs)); // Pivot around 0, 0
-                    subpartLocalMatrix *= Matrix.CreateTranslation(origin); // Move it back
+                    OriginRotate(ref subpartLocalMatrix, subpartLocalMatrix.Translation, Matrix.CreateFromYawPitchRoll(MathHelper.ToRadians(AzimuthDegs), MathHelper.ToRadians(PitchDegs), 0));
+
                     subpartLocalMatrix = Matrix.Normalize(subpartLocalMatrix);
 
                     block.PositionComp.SetLocalMatrix(ref subpartLocalMatrix);
