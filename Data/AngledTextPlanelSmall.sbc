@@ -1,0 +1,30 @@
+<?xml version="1.0" ?>
+<Definitions xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+	<CubeBlocks>
+		<Definition xsi:type="MyObjectBuilder_TextPanelDefinition">
+			<Id>
+				<TypeId>TextPanel</TypeId>
+				<SubtypeId>NI_AngledTextPlanelSmall</SubtypeId>
+			</Id>
+			<DisplayName>DisplayName_AngledTextPlanelSmall</DisplayName>
+			<Description>Description_AngledTextPlanelSmall</Description>
+			<Icon>Textures\GUI\Icons\AstronautBackpack.dds</Icon>
+			<CubeSize>Small</CubeSize>
+			<BlockTopology>TriangleMesh</BlockTopology>
+			<Size x="1" y="1" z="1"/>
+			<ModelOffset x="0" y="0" z="0"/>
+			<Model>Models\small\AngledTextPanelSmall.mwm</Model>
+			<Components>
+				<Component Count="10" Subtype="SteelPlate"/>
+			</Components>
+			<CriticalComponent Index="0" Subtype="SteelPlate"/>
+			<BlockPairName>AngledTextPlanelSmall</BlockPairName>
+			<ScreenAreas>
+               <ScreenArea Name="ScreenArea" DisplayName="ScreenArea" TextureResolution="512" ScreenWidth="1" ScreenHeight="1" />
+							 <ScreenArea Name="ScreenArea90" DisplayName="ScreenArea90" TextureResolution="512" ScreenWidth="1" ScreenHeight="1" />         
+               <ScreenArea Name="ScreenArea180" DisplayName="ScreenArea180" TextureResolution="512" ScreenWidth="1" ScreenHeight="1" />
+               <ScreenArea Name="ScreenArea270" DisplayName="ScreenArea270" TextureResolution="512" ScreenWidth="1" ScreenHeight="1" />
+			</ScreenAreas>
+		</Definition>
+	</CubeBlocks>
+</Definitions>
