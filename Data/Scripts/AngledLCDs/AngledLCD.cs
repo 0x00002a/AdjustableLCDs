@@ -107,9 +107,6 @@ namespace Natomic.AngledLCDs
 
         public override void Init(MyObjectBuilder_EntityBase objectBuilder)
         {
-            // this method is called async! always do stuff in the first update unless you're sure it must be in this one.
-            // NOTE the objectBuilder arg is not the Entity's but the component's, and since the component wasn't loaded from an OB that means it's always null, which it is (AFAIK).
-
             block = (T)Entity;
             NeedsUpdate = MyEntityUpdateEnum.BEFORE_NEXT_FRAME;
 
@@ -246,30 +243,6 @@ namespace Natomic.AngledLCDs
 
         }
 
-        public override void UpdateAfterSimulation()
-        {
-            // executed 60 times a second before physics simulation, unless game is paused.
-            // triggered only if NeedsUpdate contains MyEntityUpdateEnum.EACH_FRAME.
-            /*  MyEntitySubpart sp;
-              if (!setup_ && Entity.TryGetSubpart(SUBPART_ROT_ID, out sp))
-              {
-                  screenRender = new MyRenderComponentScreenAreas(sp);
-                  sp.Render.ContainerBase.Add(screenRender);
-                  screenRender = sp.Render.GetAs<MyRenderComponentScreenAreas>();
-                  screenRender.AddScreenArea(sp.Render.RenderObjectIDs, "ScreenArea");
-                  screenRender.UpdateModelProperties();
-                  setup_ = true;
-
-              }*/
-        }
-
-        public override void UpdateAfterSimulation100()
-        {
-            // executed approximately every 100 ticks (~1.66s), unless game is paused.
-            // why approximately? Explained at the "Important information" in: https://forum.keenswh.com/threads/pb-scripting-guide-how-to-use-self-updating.7398267/
-            // there's also a 10-tick variant.
-            // triggered only if NeedsUpdate contains MyEntityUpdateEnum.EACH_100TH_FRAME, same for UpdateBeforeSimulation100().
-
-        }
+        
     }
 }
