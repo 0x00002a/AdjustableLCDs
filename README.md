@@ -22,6 +22,7 @@ properties is:
 - Z offset
 - Y offset
 - X offset
+- Persistence including through saves without the mod installed (spawning a ship without the mod installed then saving it will not wipe the configuration of any existing LCDs)
 
 
 ### Disclaimer 
@@ -30,13 +31,23 @@ This mod changes the `LocalMatrix` of the block. This will likely confuse any mo
 on the LCD always being aligned to an axis. I have yet to encounter a mod or PB broken by this but it may happen. 
 You have been warned.
 
+### Support for modded blocks
+
+This mod will support any modded block that uses `MyObjectBuilder_TextPanel`. So probably any one you are 
+likely to use. If you find one that is not supported, leave a comment and I'll try and add support.
+
+### A note on realism
+
+This mod does not change the hitbox of blocks. However, it will allow the visible part of the block to clip
+through other blocks and of course hang suspended apparently unsupported. You can of course choose not to manipulate
+the block in such ways as to shatter the illusion but you have been warned.
 
 ## License/Reuploading 
 
 My code in this mod in licensed under the GNU GPLv3. Parts of this mod are not my own work and I 
 cannot and do not relicense them. These parts are:
 
-- `Log.cs` (auhtor Digi)
+- `Log.cs` (author Digi)
 
 Please contact the respective authors of the above for redistribution rights. As for my code, read the license:
 
@@ -64,4 +75,4 @@ use the GPLv3 license for any modifications.
 
 ## Source
 
-The full source code for this mod can be found here: 
+The full source code for this mod can be found here: https://github.com/0x00002a/AdjustableLCDs
