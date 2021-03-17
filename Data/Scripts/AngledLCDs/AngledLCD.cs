@@ -80,7 +80,7 @@ namespace Natomic.AngledLCDs
             }
         }
         private Matrix origin_;
-        private MyIni ini_helper_ = new MyIni();
+        private readonly MyIni ini_helper_ = new MyIni();
         private const string INI_SEC_NAME = "AngledLCDs Save Data";
         private readonly MyIniKey azimuth_key_ = new MyIniKey(INI_SEC_NAME, "azimuth");
         private readonly MyIniKey pitch_key_ = new MyIniKey(INI_SEC_NAME, "pitch");
@@ -122,9 +122,14 @@ namespace Natomic.AngledLCDs
         }
         private static void CreateTermControls()
         {
-            AddTermSlider("xrot_slider", "Azimuth rotation", "-180 to 180 in degrees", -180, 180, (b, v) => b.AzimuthDegs = v, b => b.AzimuthDegs);
+            var sep = MyAPIGateway.TerminalControls.CreateControl<IMyTerminalControlSeparator, T>("angled_lcds_sep");
+            MyAPIGateway.TerminalControls.AddControl<T>(sep);
+
             AddTermSlider("zrot_slider", "Pitch", "-180 to 180 in degrees", -180, 180, (b, v) => b.PitchDegs = v, b => b.PitchDegs);
-            AddTermSlider("offs_slider", "Forward Offset", "0 to 1, forward offset", -10, 10, (b, v) => b.ForwardOffset = v, b => b.ForwardOffset);
+            AddTermSlider("xrot_slider", "Yaw", "-180 to 180 in degrees", -180, 180, (b, v) => b.AzimuthDegs = v, b => b.AzimuthDegs);
+            AddTermSlider("xffs_slider", "Z Offset", "-10 to 10, forward offset", -10, 10, (b, v) => b.ForwardOffset = v, b => b.ForwardOffset);
+            AddTermSlider("zffs_slider", "X Offset", "-10 to 10, left offset", -10, 10, (b, v) => b.LeftOffset = v, b => b.LeftOffset);
+            AddTermSlider("yffs_slider", "Y Offset", "-10 to 10, up offset", -10, 10, (b, v) => b.UpOffset= v, b => b.UpOffset);
                 
 
             controls_created_ = true;
