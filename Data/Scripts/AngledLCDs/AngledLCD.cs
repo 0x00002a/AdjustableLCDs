@@ -15,11 +15,10 @@ using VRage.Game.ModAPI.Ingame.Utilities;
 
 namespace Natomic.AngledLCDs
 {
-    // This object gets attached to entities depending on their type and optionally subtype aswell.
-    // The 2nd arg, "false", is for entity-attached update if set to true which is not recommended, see for more info: https://forum.keenswh.com/threads/modapi-changes-jan-26.7392280/
-    // Remove any method that you don't need, they're only there to show what you can use, and also remove comments you've read as they're only for example purposes and don't make sense in a final mod.
     [MyEntityComponentDescriptor(typeof(MyObjectBuilder_TextPanel), false)]
     public class AngledLCDTextPanel : AngledLCD<IMyTextPanel> { }
+
+
     public class AngledLCD<T> : MyGameLogicComponent where T: IMyTerminalBlock
     {
         private T block; // storing the entity as a block reference to avoid re-casting it every time it's needed, this is the lowest type a block entity can be.
@@ -115,6 +114,7 @@ namespace Natomic.AngledLCDs
             if (ini_helper_.TryParse(data))
             {
                 AzimuthDegs = (float)ini_helper_.Get(azimuth_key_).ToDouble();
+                PitchDegs = (float)ini_helper_.Get(pitch_key_).ToDouble();
             } else
             {
                 SaveData();
@@ -123,6 +123,8 @@ namespace Natomic.AngledLCDs
         }
         private void SaveData()
         {
+            ini_helper_.TryParse(block.CustomData);
+
             ini_helper_.AddSection(INI_SEC_NAME);
             ini_helper_.Set(azimuth_key_, azimuth_degs_);
             ini_helper_.Set(pitch_key_, pitch_degs_);
@@ -153,11 +155,20 @@ namespace Natomic.AngledLCDs
                         origin_ = block.PositionComp.LocalMatrixRef;
                         origin_ = Matrix.Normalize(origin_);
                     }
-                    OriginRotate(ref subpartLocalMatrix, subpartLocalMatrix.Translation, Matrix.CreateFromYawPitchRoll(MathHelper.ToRadians(AzimuthDegs), MathHelper.ToRadians(PitchDegs), 0));
+                    subpartLocalMatrix = origin_;
+                    var localForward = origin_.Right;
+                    var gridForward = block.CubeGrid.PositionComp.LocalMatrixRef.Forward;
+                    Matrix relativeTransform;
+
+                    //subpartLocalMatrix *= relativeTransform;
+                    //OriginRotate(ref subpartLocalMatrix, subpartLocalMatrix.Translation, Matrix.CreateFromYawPitchRoll(MathHelper.ToRadians(AzimuthDegs), MathHelper.ToRadians(PitchDegs), 0));
+                    OriginRotate(ref subpartLocalMatrix, subpartLocalMatrix.Translation, Matrix.CreateFromAxisAngle(localForward, MathHelper.ToRadians(pitch_degs_)) * Matrix.CreateFromAxisAngle(origin_.Up, MathHelper.ToRadians(azimuth_degs_)));
 
                     subpartLocalMatrix = Matrix.Normalize(subpartLocalMatrix);
 
                     block.PositionComp.SetLocalMatrix(ref subpartLocalMatrix);
+
+
 
                     var b = block as IMyFunctionalBlock;
                     if (b != null) // This is hacky af but turning it off and on again updates it apparently
