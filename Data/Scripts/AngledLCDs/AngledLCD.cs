@@ -28,7 +28,7 @@ namespace Natomic.AngledLCDs
         private float azimuth_degs_ = 0f;
         private float pitch_degs_ = 0f;
         private static bool controls_created_ = false;
-        private float offset_ = 0f;
+        private Vector3D offset_ = new Vector3D(0, 0, 0);
         public float AzimuthDegs { set
             {
                 azimuth_degs_ = value;
@@ -43,12 +43,40 @@ namespace Natomic.AngledLCDs
             }
             get { return pitch_degs_; }
         }
-        public float Offset
+        public float ForwardOffset
         {
             set
             {
-                offset_ = value;
+                offset_.X = value;
                 rotated_ = false;
+            } 
+            get
+            {
+                return (float)offset_.X;
+            }
+        }
+        public float LeftOffset
+        {
+            set
+            {
+                offset_.Y = value;
+                rotated_ = false;
+            }
+            get
+            {
+                return (float)offset_.Y;
+            }
+        }
+        public float UpOffset
+        {
+            set
+            {
+                offset_.Z = value;
+                rotated_ = false;
+            } 
+            get
+            {
+                return (float)offset_.Z;
             }
         }
         private Matrix origin_;
@@ -73,52 +101,31 @@ namespace Natomic.AngledLCDs
             }
 
         }
+
+        private static void AddTermSlider(string name, string title, string tooltip, int lower, int upper, Action<AngledLCD<T>, float> set, Func<AngledLCD<T>, float> get)
+        {
+            var slider = MyAPIGateway.TerminalControls.CreateControl<IMyTerminalControlSlider, T>(name);
+            slider.Title = MyStringId.GetOrCompute(title);
+            slider.Tooltip = MyStringId.GetOrCompute(tooltip);
+            slider.SetLimits(lower, upper);
+            slider.Getter = b => get(b.GameLogic.GetAs<AngledLCD<T>>());
+            slider.Setter = (b, val) =>
+            {
+                var lcd = b.GameLogic.GetAs<AngledLCD<T>>();
+                set(lcd, val);
+                lcd.SaveData();
+            };
+            slider.Writer = (b, str) => str.Append(Math.Round(get(b.GameLogic.GetAs<AngledLCD<T>>()), 2));
+
+            MyAPIGateway.TerminalControls.AddControl<T>(slider);
+            
+        }
         private static void CreateTermControls()
         {
-            var xrot = MyAPIGateway.TerminalControls.CreateControl<IMyTerminalControlSlider, T>("xrot_slider");
-            xrot.Title = MyStringId.GetOrCompute("Azimuth rotation");
-            xrot.Tooltip = MyStringId.GetOrCompute("-180 to 180 in degrees");
-            xrot.SetLimits(-180, 180);
-            xrot.Getter = b => b.GameLogic.GetAs<AngledLCD<T>>().AzimuthDegs;
-            xrot.Setter = (b, value) =>
-            {
-                var lcd = b.GameLogic.GetAs<AngledLCD<T>>();
-                lcd.AzimuthDegs = value;
-                lcd.SaveData();
-            };
-            xrot.Writer = (b, str) => str.Append(Math.Round(b.GameLogic.GetAs<AngledLCD<T>>().AzimuthDegs, 2).ToString());
-
-            var zrot = MyAPIGateway.TerminalControls.CreateControl<IMyTerminalControlSlider, T>("zrot_slider");
-            zrot.Title = MyStringId.GetOrCompute("Pitch");
-            zrot.Tooltip = MyStringId.GetOrCompute("-180 to 180 in degrees");
-            zrot.SetLimits(-180, 180);
-            zrot.Getter = b => b.GameLogic.GetAs<AngledLCD<T>>().PitchDegs;
-            zrot.Setter = (b, value) =>
-            {
-                var lcd = b.GameLogic.GetAs<AngledLCD<T>>();
-                lcd.PitchDegs = value;
-                lcd.SaveData();
-            };
-            zrot.Writer = (b, str) => str.Append(Math.Round(b.GameLogic.GetAs<AngledLCD<T>>().PitchDegs, 2).ToString());
-
-            
-            var offs = MyAPIGateway.TerminalControls.CreateControl<IMyTerminalControlSlider, T>("offs_slider");
-            offs.Title = MyStringId.GetOrCompute("Offset");
-            offs.Tooltip = MyStringId.GetOrCompute("0 to 1, forward offset");
-            offs.SetLimits(-10, 10);
-            offs.Getter = b => b.GameLogic.GetAs<AngledLCD<T>>().offset_;
-            offs.Setter = (b, value) =>
-            {
-                var lcd = b.GameLogic.GetAs<AngledLCD<T>>();
-                lcd.Offset = value;
-                lcd.SaveData();
-            };
-            offs.Writer = (b, str) => str.Append(Math.Round(b.GameLogic.GetAs<AngledLCD<T>>().offset_, 2).ToString());
-
-
-            MyAPIGateway.TerminalControls.AddControl<T>(xrot);
-            MyAPIGateway.TerminalControls.AddControl<T>(zrot);
-            MyAPIGateway.TerminalControls.AddControl<T>(offs);
+            AddTermSlider("xrot_slider", "Azimuth rotation", "-180 to 180 in degrees", -180, 180, (b, v) => b.AzimuthDegs = v, b => b.AzimuthDegs);
+            AddTermSlider("zrot_slider", "Pitch", "-180 to 180 in degrees", -180, 180, (b, v) => b.PitchDegs = v, b => b.PitchDegs);
+            AddTermSlider("offs_slider", "Forward Offset", "0 to 1, forward offset", -10, 10, (b, v) => b.ForwardOffset = v, b => b.ForwardOffset);
+                
 
             controls_created_ = true;
         }
@@ -139,7 +146,7 @@ namespace Natomic.AngledLCDs
             {
                 AzimuthDegs = (float)ini_helper_.Get(azimuth_key_).ToDouble();
                 PitchDegs = (float)ini_helper_.Get(pitch_key_).ToDouble();
-                Offset = (float)ini_helper_.Get(offset_key_).ToDouble();
+                Vector3D.TryParse(ini_helper_.Get(offset_key_).ToString(), out offset_);
             } else
             {
                 SaveData();
@@ -153,7 +160,7 @@ namespace Natomic.AngledLCDs
             ini_helper_.AddSection(INI_SEC_NAME);
             ini_helper_.Set(azimuth_key_, azimuth_degs_);
             ini_helper_.Set(pitch_key_, pitch_degs_);
-            ini_helper_.Set(offset_key_, offset_);
+            ini_helper_.Set(offset_key_, offset_.ToString());
 
             block.CustomData = ini_helper_.ToString();
         }
@@ -184,12 +191,13 @@ namespace Natomic.AngledLCDs
                     subpartLocalMatrix = origin_;
                     var localForward = origin_.Right;
                     var gridForward = block.CubeGrid.PositionComp.LocalMatrixRef.Forward;
-                    Matrix relativeTransform;
 
                     //subpartLocalMatrix *= relativeTransform;
                     //OriginRotate(ref subpartLocalMatrix, subpartLocalMatrix.Translation, Matrix.CreateFromYawPitchRoll(MathHelper.ToRadians(AzimuthDegs), MathHelper.ToRadians(PitchDegs), 0));
                     OriginRotate(ref subpartLocalMatrix, subpartLocalMatrix.Translation, Matrix.CreateFromAxisAngle(localForward, MathHelper.ToRadians(pitch_degs_)) * Matrix.CreateFromAxisAngle(origin_.Up, MathHelper.ToRadians(azimuth_degs_)));
-                    subpartLocalMatrix *= Matrix.CreateTranslation(subpartLocalMatrix.Forward * offset_);
+                    subpartLocalMatrix *= Matrix.CreateTranslation((Vector3D)subpartLocalMatrix.Forward * offset_.X);
+                    subpartLocalMatrix *= Matrix.CreateTranslation((Vector3D)subpartLocalMatrix.Left * LeftOffset);
+                    subpartLocalMatrix *= Matrix.CreateTranslation((Vector3D)subpartLocalMatrix.Up * UpOffset);
 
                     subpartLocalMatrix = Matrix.Normalize(subpartLocalMatrix);
 
