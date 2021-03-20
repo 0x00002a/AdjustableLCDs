@@ -42,6 +42,12 @@ This mod does not change the hitbox of blocks. However, it will allow the visibl
 through other blocks and of course hang suspended apparently unsupported. You can of course choose not to manipulate
 the block in such ways as to shatter the illusion but you have been warned.
 
+## Conflicts with PB scripts 
+
+This mod _should not_ conflict with any PB script which uses the MyIni format for the Custom Data. Most popular 
+scripts nowadays do support this format but may require additional configuration (Automatic LCDs 2 for example). 
+This mod is not an never will be compatable with any scripts which do not use this format. 
+
 ## License/Reuploading 
 
 My code in this mod in licensed under the GNU GPLv3. Parts of this mod are not my own work and I 
