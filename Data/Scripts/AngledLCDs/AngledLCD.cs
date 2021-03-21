@@ -116,7 +116,6 @@ namespace Natomic.AngledLCDs
             }
 
         }
-
         private static void AddTermSlider(string name, string title, string tooltip, int lower, int upper, Action<AngledLCD<T>, float> set, Func<AngledLCD<T>, float> get)
         {
             var slider = MyAPIGateway.TerminalControls.CreateControl<IMyTerminalControlSlider, T>(name);
@@ -167,15 +166,17 @@ namespace Natomic.AngledLCDs
                 AzimuthDegs = (float)ini_helper_.Get(azimuth_key_).ToDouble();
                 PitchDegs = (float)ini_helper_.Get(pitch_key_).ToDouble();
                 Vector3D.TryParse(ini_helper_.Get(offset_key_).ToString(), out offset_);
-            } else
-            {
-                SaveData();
             }
 
         }
         private void SaveData()
         {
-            ini_helper_.TryParse(block.CustomData);
+            if (block.CustomData.Length > 0 && !ini_helper_.TryParse(block.CustomData))
+            {
+                var msg = $"Custom data of {block.CustomName} is incorrectly formatted";
+                Log.Error($"Failed to save block data: {msg}", msg);
+                return;
+            }
 
             ini_helper_.AddSection(INI_SEC_NAME);
             ini_helper_.Set(azimuth_key_, azimuth_degs_);
