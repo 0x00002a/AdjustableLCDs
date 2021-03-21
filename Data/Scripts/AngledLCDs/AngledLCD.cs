@@ -40,9 +40,9 @@ namespace Natomic.AngledLCDs
     public class AngledLCD<T> : MyGameLogicComponent where T: IMyFunctionalBlock
     {
         private T block; // storing the entity as a block reference to avoid re-casting it every time it's needed, this is the lowest type a block entity can be.
-        private bool foundSubpart = false;
+        private bool originValid = false;
         private Matrix subpartLocalMatrix;
-        bool rotated_ = true;
+        bool positionUnchanged = true;
         private float azimuth_degs_ = 0f;
         private float pitch_degs_ = 0f;
         private static bool controls_created_ = false;
@@ -50,14 +50,14 @@ namespace Natomic.AngledLCDs
         public float AzimuthDegs { set
             {
                 azimuth_degs_ = value;
-                rotated_ = false;
+                positionUnchanged = false;
             } get { return azimuth_degs_; } }
         public float PitchDegs
         {
             set
             {
                 pitch_degs_ = value;
-                rotated_ = false;
+                positionUnchanged = false;
             }
             get { return pitch_degs_; }
         }
@@ -66,7 +66,7 @@ namespace Natomic.AngledLCDs
             set
             {
                 offset_.X = value;
-                rotated_ = false;
+                positionUnchanged = false;
             } 
             get
             {
@@ -78,7 +78,7 @@ namespace Natomic.AngledLCDs
             set
             {
                 offset_.Y = value;
-                rotated_ = false;
+                positionUnchanged = false;
             }
             get
             {
@@ -90,7 +90,7 @@ namespace Natomic.AngledLCDs
             set
             {
                 offset_.Z = value;
-                rotated_ = false;
+                positionUnchanged = false;
             } 
             get
             {
@@ -121,8 +121,8 @@ namespace Natomic.AngledLCDs
             if (!MarkedForClose)
             {
                 // Mergeblock behaviour is to destroy the old grid and move the blocks, which means we gotta update or the transformations get reset
-                rotated_ = false;
-                foundSubpart = false;
+                positionUnchanged = false;
+                originValid = false;
             }
         }
 
@@ -210,12 +210,12 @@ namespace Natomic.AngledLCDs
         {
             try
             {
-                if (!rotated_)
+                if (!positionUnchanged)
                 {
 
-                    if (!foundSubpart)
+                    if (!originValid)
                     {
-                        foundSubpart = true;
+                        originValid = true;
                         origin_ = block.PositionComp.LocalMatrixRef;
                         origin_ = Matrix.Normalize(origin_);
                     }
@@ -242,7 +242,7 @@ namespace Natomic.AngledLCDs
                         b.Enabled = false;
                         b.Enabled = true;
                     }
-                    rotated_ = true;
+                    positionUnchanged = true;
                 }
 
             }
