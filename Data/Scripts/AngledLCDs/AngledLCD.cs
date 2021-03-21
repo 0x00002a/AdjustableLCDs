@@ -37,7 +37,7 @@ namespace Natomic.AngledLCDs
     public class AngledLCDTextPanel : AngledLCD<IMyTextPanel> { }
 
 
-    public class AngledLCD<T> : MyGameLogicComponent where T: IMyTerminalBlock
+    public class AngledLCD<T> : MyGameLogicComponent where T: IMyFunctionalBlock
     {
         private T block; // storing the entity as a block reference to avoid re-casting it every time it's needed, this is the lowest type a block entity can be.
         private bool foundSubpart = false;
@@ -114,8 +114,18 @@ namespace Natomic.AngledLCDs
             {
                 CreateTermControls();
             }
-
+            block.CubeGrid.OnClose += Grid_OnClose;
         }
+        private void Grid_OnClose(IMyEntity _)
+        {
+            if (!MarkedForClose)
+            {
+                // Mergeblock behaviour is to destroy the old grid and move the blocks, which means we gotta update or the transformations get reset
+                rotated_ = false;
+                foundSubpart = false;
+            }
+        }
+
         private static void AddTermSlider(string name, string title, string tooltip, int lower, int upper, Action<AngledLCD<T>, float> set, Func<AngledLCD<T>, float> get)
         {
             var slider = MyAPIGateway.TerminalControls.CreateControl<IMyTerminalControlSlider, T>(name);
