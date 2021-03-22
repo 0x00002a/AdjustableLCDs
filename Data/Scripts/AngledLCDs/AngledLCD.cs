@@ -44,7 +44,6 @@ namespace Natomic.AngledLCDs
         private Matrix subpartLocalMatrix;
         private bool positionUnchanged = true;
         private bool originValid = false;
-        private bool justSplit = false;
 
         private float azimuth_degs_ = 0f;
         private float pitch_degs_ = 0f;
@@ -117,18 +116,15 @@ namespace Natomic.AngledLCDs
             {
                 CreateTermControls();
             }
-            block.Hierarchy.OnParentChanged += (p1, p2) => Grid_OnClose(null);
+            block.Hierarchy.OnParentChanged += (p1, p2) => OnMergeblockConnect();
         }
 
 
-        private void Grid_OnClose(IMyEntity _)
+        private void OnMergeblockConnect()
         {
-            if (!MarkedForClose)
-            {
-                // Mergeblock behaviour is to destroy the old grid and move the blocks, which means we gotta update or the transformations get reset
-                positionUnchanged = false;
-                originValid = false;
-            }
+            // Mergeblock behaviour is to destroy the old grid and move the blocks, which means we gotta update or the transformations get reset
+            positionUnchanged = false;
+            originValid = false;
         }
 
         private static void AddTermSlider(string name, string title, string tooltip, int lower, int upper, Action<AngledLCD<T>, float> set, Func<AngledLCD<T>, float> get)
@@ -218,19 +214,17 @@ namespace Natomic.AngledLCDs
                 if (!positionUnchanged)
                 {
 
-                    if (!originValid && !justSplit)
+                    if (!originValid)
                     {
-                        originValid = true;
                         origin_ = block.PositionComp.LocalMatrixRef;
                         origin_ = Matrix.Normalize(origin_);
+                        originValid = true;
                     }
 
                     subpartLocalMatrix = origin_;
                     var localForward = origin_.Right;
                     var gridForward = block.CubeGrid.PositionComp.LocalMatrixRef.Forward;
 
-                    //subpartLocalMatrix *= relativeTransform;
-                    //OriginRotate(ref subpartLocalMatrix, subpartLocalMatrix.Translation, Matrix.CreateFromYawPitchRoll(MathHelper.ToRadians(AzimuthDegs), MathHelper.ToRadians(PitchDegs), 0));
                     OriginRotate(ref subpartLocalMatrix, subpartLocalMatrix.Translation, Matrix.CreateFromAxisAngle(localForward, MathHelper.ToRadians(pitch_degs_)) * Matrix.CreateFromAxisAngle(origin_.Up, MathHelper.ToRadians(azimuth_degs_)));
                     subpartLocalMatrix *= Matrix.CreateTranslation((Vector3D)subpartLocalMatrix.Forward * offset_.X);
                     subpartLocalMatrix *= Matrix.CreateTranslation((Vector3D)subpartLocalMatrix.Left * LeftOffset);
