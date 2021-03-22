@@ -40,9 +40,12 @@ namespace Natomic.AngledLCDs
     public class AngledLCD<T> : MyGameLogicComponent where T: IMyFunctionalBlock
     {
         private T block; // storing the entity as a block reference to avoid re-casting it every time it's needed, this is the lowest type a block entity can be.
-        private bool originValid = false;
+
         private Matrix subpartLocalMatrix;
-        bool positionUnchanged = true;
+        private bool positionUnchanged = true;
+        private bool originValid = false;
+        private bool justSplit = false;
+
         private float azimuth_degs_ = 0f;
         private float pitch_degs_ = 0f;
         private static bool controls_created_ = false;
@@ -114,8 +117,10 @@ namespace Natomic.AngledLCDs
             {
                 CreateTermControls();
             }
-            block.CubeGrid.OnClose += Grid_OnClose;
+            block.Hierarchy.OnParentChanged += (p1, p2) => Grid_OnClose(null);
         }
+
+
         private void Grid_OnClose(IMyEntity _)
         {
             if (!MarkedForClose)
@@ -213,12 +218,13 @@ namespace Natomic.AngledLCDs
                 if (!positionUnchanged)
                 {
 
-                    if (!originValid)
+                    if (!originValid && !justSplit)
                     {
                         originValid = true;
                         origin_ = block.PositionComp.LocalMatrixRef;
                         origin_ = Matrix.Normalize(origin_);
                     }
+
                     subpartLocalMatrix = origin_;
                     var localForward = origin_.Right;
                     var gridForward = block.CubeGrid.PositionComp.LocalMatrixRef.Forward;
