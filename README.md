@@ -50,33 +50,26 @@ This mod is not an never will be compatable with any scripts which do not use th
 
 ## License/Reuploading 
 
-My code in this mod in licensed under the GNU GPLv3. Parts of this mod are not my own work and I 
-cannot and do not relicense them. These parts are:
+Parts of this mod are not my own work and I cannot and do not relicense them. These parts are:
 
 - `Log.cs` (author Digi)
 
-Please contact the respective authors of the above for redistribution rights. As for my code, read the license:
+Please contact the respective authors of the above for redistribution rights. As for my code:
 
-```
-    Adjustable LCDs Space Engineers mod
-    Copyright (C) 2021 Natasha England-Elbro
+This mod is GPLv3. That means you can reupload it or any mod that contains it _as long as_ you:
 
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
+- Keep all existing license notices intact
+- Credit me
+- List your changes (easiest way is with git and github repo)
+- Make _all_ the source code of the relevent mod avaliable freely and publically with no restrictions placed on its access
+- Make your mod GPLv3 as well
+- Give me your first born child
 
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
+(ok that last one isn't actually legally binding)
 
-    You should have received a copy of the GNU General Public License
-    along with this program.  If not, see <https://www.gnu.org/licenses/>.
-```
-tl;dr Yes you can reupload part or all of it as long as you release all of the source 
-including modifcations made, keep all existing license notices, and 
-use the GPLv3 license for any modifications.
+If in doubt, ask me in comments or the Keen discord (\@Natomic). 
+Full license is avaliable [here](https://github.com/0x00002a/AdjustableLCDs/blob/850d5e4b9309e719b4001ae6f54e7a800ece34c4/LICENSE). I reserve the right to ask 
+for your mod to be yeeted if you have reused my mod without obeying the license.
 
 
 ## Source
