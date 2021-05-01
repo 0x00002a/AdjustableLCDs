@@ -48,6 +48,9 @@ This mod _should not_ conflict with any PB script which uses the MyIni format fo
 scripts nowadays do support this format but may require additional configuration (Automatic LCDs 2 for example). 
 This mod is not an never will be compatable with any scripts which do not use this format. 
 
+Note that in the case of Automatic LCDs 2, you _must_ set up the terminator in the Custom Data, else you'll get a bunch 
+of errors. Check out the "Compatability with other scripts" section [here](https://steamcommunity.com/sharedfiles/filedetails/?id=407158161)
+
 ## License/Reuploading 
 
 Parts of this mod are not my own work and I cannot and do not relicense them. These parts are:
