@@ -22,9 +22,13 @@ adjustable properties is:
 
 - Yaw
 - Pitch
+- Roll
 - Z offset
 - Y offset
 - X offset
+
+Other features:
+
 - Persistence including through saves without the mod installed (spawning a ship
   without the mod installed then saving it will not wipe the configuration of
   any existing LCDs)
