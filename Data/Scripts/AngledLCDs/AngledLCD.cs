@@ -49,6 +49,18 @@ namespace Natomic.AngledLCDs
         private float pitch_degs_ = 0f;
         private static bool controls_created_ = false;
         private Vector3D offset_ = new Vector3D(0, 0, 0);
+
+        internal float roll_degs_ = 0f;
+
+        public float RollDegs
+        {
+            set
+            {
+                roll_degs_ = value;
+                positionUnchanged = false;
+            } get { return roll_degs_;  }
+        }
+
         public float AzimuthDegs { set
             {
                 azimuth_degs_ = value;
@@ -104,6 +116,7 @@ namespace Natomic.AngledLCDs
         private const string INI_SEC_NAME = "AngledLCDs Save Data";
         private readonly MyIniKey azimuth_key_ = new MyIniKey(INI_SEC_NAME, "azimuth");
         private readonly MyIniKey pitch_key_ = new MyIniKey(INI_SEC_NAME, "pitch");
+        private readonly MyIniKey roll_key_ = new MyIniKey(INI_SEC_NAME, "roll");
         private readonly MyIniKey offset_key_ = new MyIniKey(INI_SEC_NAME, "offset");
         
 
@@ -152,6 +165,7 @@ namespace Natomic.AngledLCDs
 
             AddTermSlider("zrot_slider", "Pitch", "-180 to 180 in degrees", -180, 180, (b, v) => b.PitchDegs = v, b => b.PitchDegs);
             AddTermSlider("xrot_slider", "Yaw", "-180 to 180 in degrees", -180, 180, (b, v) => b.AzimuthDegs = v, b => b.AzimuthDegs);
+            AddTermSlider("yrot_slider", "Roll", "-180 to 180 in degrees", -180, 180, (b, v) => b.RollDegs = v, b => b.RollDegs);
             AddTermSlider("xffs_slider", "Z Offset", "-10 to 10, forward offset", -10, 10, (b, v) => b.ForwardOffset = v, b => b.ForwardOffset);
             AddTermSlider("zffs_slider", "X Offset", "-10 to 10, left offset", -10, 10, (b, v) => b.LeftOffset = v, b => b.LeftOffset);
             AddTermSlider("yffs_slider", "Y Offset", "-10 to 10, up offset", -10, 10, (b, v) => b.UpOffset= v, b => b.UpOffset);
@@ -176,6 +190,9 @@ namespace Natomic.AngledLCDs
             {
                 AzimuthDegs = (float)ini_helper_.Get(azimuth_key_).ToDouble();
                 PitchDegs = (float)ini_helper_.Get(pitch_key_).ToDouble();
+                double roll = roll_degs_;
+                ini_helper_.Get(roll_key_).TryGetDouble(out roll);
+                RollDegs = (float)roll;
                 Vector3D.TryParse(ini_helper_.Get(offset_key_).ToString(), out offset_);
             }
 
@@ -192,6 +209,7 @@ namespace Natomic.AngledLCDs
             ini_helper_.AddSection(INI_SEC_NAME);
             ini_helper_.Set(azimuth_key_, azimuth_degs_);
             ini_helper_.Set(pitch_key_, pitch_degs_);
+            ini_helper_.Set(roll_key_, roll_degs_);
             ini_helper_.Set(offset_key_, offset_.ToString());
 
             block.CustomData = ini_helper_.ToString();
@@ -225,7 +243,10 @@ namespace Natomic.AngledLCDs
                     var localForward = origin_.Right;
                     var gridForward = block.CubeGrid.PositionComp.LocalMatrixRef.Forward;
 
-                    OriginRotate(ref subpartLocalMatrix, subpartLocalMatrix.Translation, Matrix.CreateFromAxisAngle(localForward, MathHelper.ToRadians(pitch_degs_)) * Matrix.CreateFromAxisAngle(origin_.Up, MathHelper.ToRadians(azimuth_degs_)));
+                    var angle_transform = Matrix.CreateFromAxisAngle(localForward, MathHelper.ToRadians(pitch_degs_))
+                                        * Matrix.CreateFromAxisAngle(origin_.Up, MathHelper.ToRadians(azimuth_degs_))
+                                        * Matrix.CreateFromAxisAngle(origin_.Forward, MathHelper.ToRadians(roll_degs_));
+                    OriginRotate(ref subpartLocalMatrix, subpartLocalMatrix.Translation, angle_transform);
                     subpartLocalMatrix *= Matrix.CreateTranslation((Vector3D)subpartLocalMatrix.Forward * offset_.X);
                     subpartLocalMatrix *= Matrix.CreateTranslation((Vector3D)subpartLocalMatrix.Left * LeftOffset);
                     subpartLocalMatrix *= Matrix.CreateTranslation((Vector3D)subpartLocalMatrix.Up * UpOffset);
