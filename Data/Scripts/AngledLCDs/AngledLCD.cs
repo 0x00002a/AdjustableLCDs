@@ -140,20 +140,54 @@ namespace Natomic.AngledLCDs
             originValid = false;
         }
 
+        private static void LogInvalidScript()
+        {
+            Log.Error("GameLogic returned null for AngledLCD", "An installed mod is incompatible with Adjustable LCDs. The only current known incompatability is with https://steamcommunity.com/workshop/filedetails/?id=2217821984");
+        }
         private static void AddTermSlider(string name, string title, string tooltip, int lower, int upper, Action<AngledLCD<T>, float> set, Func<AngledLCD<T>, float> get)
         {
             var slider = MyAPIGateway.TerminalControls.CreateControl<IMyTerminalControlSlider, T>(name);
             slider.Title = MyStringId.GetOrCompute(title);
             slider.Tooltip = MyStringId.GetOrCompute(tooltip);
             slider.SetLimits(lower, upper);
-            slider.Getter = b => get(b.GameLogic.GetAs<AngledLCD<T>>());
+            slider.Getter = b =>
+            {
+                var lcd = b.GameLogic.GetAs<AngledLCD<T>>();
+                if (lcd == null)
+                {
+                    LogInvalidScript();
+                    return 0.0f;
+                }
+                else
+                {
+                    return get(lcd);
+                }
+            };
             slider.Setter = (b, val) =>
             {
                 var lcd = b.GameLogic.GetAs<AngledLCD<T>>();
-                set(lcd, val);
-                lcd.SaveData();
+                if (lcd == null)
+                {
+                    LogInvalidScript();
+                }
+                else
+                {
+                    set(lcd, val);
+                    lcd.SaveData();
+                }
             };
-            slider.Writer = (b, str) => str.Append(Math.Round(get(b.GameLogic.GetAs<AngledLCD<T>>()), 2));
+            slider.Writer = (b, str) =>
+            {
+                var lcd = b.GameLogic.GetAs<AngledLCD<T>>();
+                if (lcd == null)
+                {
+                    LogInvalidScript();
+                }
+                else
+                {
+                    str.Append(Math.Round(get(lcd), 2));
+                }
+            };
 
             MyAPIGateway.TerminalControls.AddControl<T>(slider);
             
