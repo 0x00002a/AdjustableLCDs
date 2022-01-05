@@ -1,4 +1,5 @@
-﻿using System;
+﻿using ProtoBuf;
+using System;
 using System.Collections.Generic;
 using System.Text;
 using VRage;
@@ -6,13 +7,19 @@ using VRageMath;
 
 namespace Natomic.AngledLCDs
 {
+    [ProtoContract]
     class AnimationStage
     {
         public static readonly string SectionName = "ADJLCD-ANI";
+        [ProtoMember(1)]
         public float AzimuthDegs = 0f;
+        [ProtoMember(2)]
         public float PitchDegs = 0f;
+        [ProtoMember(3)]
         public float RollDegs = 0f;
+        [ProtoMember(4)]
         public uint Timecode = 0;
+        [ProtoMember(5)]
         private Vector3D offset_ = Vector3D.Zero;
         public double X
         {

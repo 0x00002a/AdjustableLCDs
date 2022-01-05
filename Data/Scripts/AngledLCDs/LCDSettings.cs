@@ -7,12 +7,24 @@ using VRage.Game.Components;
 using VRage.Game.ModAPI.Ingame.Utilities;
 using VRageMath;
 using System.Linq;
+using ProtoBuf;
 
 namespace Natomic.AngledLCDs
 {
+    [ProtoContract]
     class LCDSettings
     {
-        public List<AnimationStage> Stages;
+        private List<AnimationStage> stages_cache_;
+        [ProtoMember(1)]
+        public List<AnimationStage> Stages { get
+            {
+                if (stages_cache_ == null)
+                {
+                    stages_cache_ = new List<AnimationStage>();
+                }
+                return stages_cache_;
+            } set { stages_cache_ = value; }
+        }
 
 
         public static readonly Guid modStorageId = Guid.Parse("16f75c87-ba3d-4125-85e6-86620aea4b93");

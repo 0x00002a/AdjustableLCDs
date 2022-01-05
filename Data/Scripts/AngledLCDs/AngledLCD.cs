@@ -201,6 +201,11 @@ namespace Natomic.AngledLCDs
 
             NeedsUpdate = MyEntityUpdateEnum.EACH_10TH_FRAME;
             LoadData();
+            if (settings.Stages.Count == 0)
+            {
+                settings.Stages.Add(new AnimationStage());
+            }
+            current_stage_ = settings.Stages[0];
         }
         private void ReportErr(string msg, Exception e)
         {
