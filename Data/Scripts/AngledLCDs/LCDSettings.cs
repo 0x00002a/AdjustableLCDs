@@ -15,7 +15,7 @@ namespace Natomic.AngledLCDs
     class LCDSettings
     {
         [ProtoContract]
-        public struct AnimationChain
+        public class AnimationChain
         {
             private List<AnimationStep> steps_cache_;
             [ProtoMember(1)]

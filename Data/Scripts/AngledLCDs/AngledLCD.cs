@@ -61,6 +61,9 @@ namespace Natomic.AngledLCDs
 
         private AnimationStage current_stage_;
         private LCDSettings settings;
+        private AnimationController animationCtrl;
+        private LCDSettings.AnimationChain currentAnimation;
+
 
 
         private readonly List<string> sections_cache = new List<string>();
@@ -267,12 +270,42 @@ namespace Natomic.AngledLCDs
                 {
                     var item = new MyTerminalControlListBoxItem(MyStringId.GetOrCompute(step.ToString()), MyStringId.GetOrCompute(""), step);
                     content.Add(item);
+                    if (step == b.currentAnimation)
+                    {
+                        sel.Add(item);
+                    }
                 }
 
             }, (b, items) =>
             {
-                
+                b.currentAnimation = (LCDSettings.AnimationChain)items[0].UserData;
             }, 5, false);
+            TerminalHelper.AddTermBtn<T>("anistart_btn", "Start animation", "Starts the selected animation", lcd => lcd.StartAnimation());
+        }
+
+        private void StartAnimation()
+        {
+            if (currentAnimation == null)
+            {
+                return;
+            }
+            if (animationCtrl == null)
+            {
+                animationCtrl = new AnimationController(settings.Stages);
+            }
+            animationCtrl.Reset(currentAnimation.Steps);
+            currentAnimation = null;
+            NeedsUpdate |= MyEntityUpdateEnum.EACH_FRAME;
+        }
+        public override void UpdateAfterSimulation() // Used for animation
+        {
+            if (!animationCtrl?.Valid ?? false)
+            {
+                NeedsUpdate ^= MyEntityUpdateEnum.EACH_FRAME;
+                return;
+            }
+            subpartLocalMatrix = animationCtrl.Step(origin_);
+            UpdateBlockPos();
         }
 
         public override void UpdateOnceBeforeFrame()
@@ -358,6 +391,16 @@ namespace Natomic.AngledLCDs
             }
             
         }
+        private void UpdateBlockPos()
+        {
+            block.PositionComp.SetLocalMatrix(ref subpartLocalMatrix);
+
+            // This is hacky af but turning it off and on again updates it apparently
+            block.Enabled = false;
+            block.Enabled = true;
+
+            positionUnchanged = true;
+        }
 
 
         public override void UpdateBeforeSimulation10()
@@ -374,14 +417,8 @@ namespace Natomic.AngledLCDs
                     }
 
                     subpartLocalMatrix = current_stage_.TargetLocation(origin_);
+                    UpdateBlockPos();
 
-                    block.PositionComp.SetLocalMatrix(ref subpartLocalMatrix);
-
-                    // This is hacky af but turning it off and on again updates it apparently
-                    block.Enabled = false;
-                    block.Enabled = true;
-
-                    positionUnchanged = true;
                 }
 
             }
