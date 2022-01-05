@@ -202,44 +202,68 @@ namespace Natomic.AngledLCDs
             NeedsUpdate = MyEntityUpdateEnum.EACH_10TH_FRAME;
             LoadData();
         }
+        private void ReportErr(string msg, Exception e)
+        {
+            Log.Error($"{msg} (block: {block.Name}, id: {block.EntityId}) {e.Message}\n{e.StackTrace}");
+        }
         
         private void LoadData()
         {
-            useModStorage = block.Storage?.ContainsKey(LCDSettings.modStorageId) ?? false;
-            if (!UseModStorage)
+            try
             {
-                var data = block.CustomData;
-                if (ini_helper_.TryParse(data))
+                useModStorage = block.Storage?.ContainsKey(LCDSettings.modStorageId) ?? false;
+                if (!UseModStorage)
                 {
-                    if (!ini_helper_.ContainsSection(LCDSettings.INI_SEC_NAME)) // First use of mod, default to mod storage
+                    var data = block.CustomData;
+                    var success = ini_helper_.TryParse(data);
+                    if (success && ini_helper_.ContainsSection(LCDSettings.INI_SEC_NAME))
                     {
-                        UseModStorage = true;
-                        return;
+                        settings = LCDSettings.LoadFrom(ini_helper_, sections_cache);
+                    } else
+                    {
+                        settings = new LCDSettings();
+                        if (success || data.Length == 0)
+                        {
+                            UseModStorage = true;
+                        } else
+                        {
+                            Log.Info($"Failed to load custom data config for block: {block.CustomName}, defaulting to mod storage with empty config");
+                        }
                     }
-
-                    settings = LCDSettings.LoadFrom(ini_helper_, sections_cache);
                 }
-            } else
+                else
+                {
+                    settings = LCDSettings.LoadFrom(block.Storage);
+                }
+            } catch(Exception e)
             {
-                settings = LCDSettings.LoadFrom(block.Storage);
+                ReportErr("Failed to load config", e);
             }
 
         }
         public void SaveData()
         {
-            if (!UseModStorage) { 
-                if (block.CustomData.Length > 0 && !ini_helper_.TryParse(block.CustomData))
-                {
-                    var msg = $"Custom data of {block.CustomName} is incorrectly formatted";
-                    Log.Error($"Failed to save block data: {msg}", msg);
-                    return;
-                }
-
-                settings.SaveTo(ini_helper_);
-                block.CustomData = ini_helper_.ToString();
-            } else
+            try
             {
-                settings.SaveTo(block.Storage);
+                if (!UseModStorage)
+                {
+                    if (block.CustomData.Length > 0 && !ini_helper_.TryParse(block.CustomData))
+                    {
+                        var msg = $"Custom data of {block.CustomName} is incorrectly formatted";
+                        Log.Error($"Failed to save block data: {msg}", msg);
+                        return;
+                    }
+
+                    settings.SaveTo(ini_helper_);
+                    block.CustomData = ini_helper_.ToString();
+                }
+                else
+                {
+                    settings.SaveTo(block.Storage);
+                }
+            } catch(Exception e)
+            {
+                ReportErr("Failed to save config", e);
             }
             
         }
