@@ -56,6 +56,7 @@ namespace Natomic.AngledLCDs
         private static IMyTerminalControlCheckbox use_modded_chbox;
         private static List<IMyTerminalControl> modded_storage_req_ctrls = new List<IMyTerminalControl>();
         private StringBuilder animationTicksStr = new StringBuilder();
+        private StringBuilder stageNameStr = new StringBuilder();
         private List<AnimationStage> selectedStages = new List<AnimationStage>();
 
         private AnimationStage current_stage_;
@@ -196,6 +197,12 @@ namespace Natomic.AngledLCDs
             TerminalHelper.AddTermSlider<T>("yffs_slider", "Y Offset", "-10 to 10, up offset", -10, 10, (b, v) => b.UpOffset= v, b => b.UpOffset);
 
 
+            TerminalHelper.AddTermTxtbox<T>("anistagename_ent", "Stage name", "Name for new stage", (b, v) => b.stageNameStr = v, b => b.stageNameStr);
+            TerminalHelper.AddTermBtn<T>("anistage_add_btn", "Add stage", "Add saved stage", lcd => {
+                lcd.settings.Stages.Add(new AnimationStage { Name = lcd.stageNameStr.ToString() });
+                lcd.stageNameStr.Clear();
+            });
+
             TerminalHelper.AddTermListSel<T>("aniframes_sel", "Stages", "Stages optionally used for animations", (b, content, sel) =>
             {
                 foreach (var stage in b.settings.Stages)
@@ -212,13 +219,17 @@ namespace Natomic.AngledLCDs
             {
                  b.current_stage_ = (AnimationStage)items[0].UserData;
                 b.positionUnchanged = false;
-                else
-                {
-                    b.selectedStages.Clear();
-                }
+                b.selectedStages.Clear();
                 b.selectedStages.AddRange(items.Select(item => (AnimationStage)item.UserData));
                 
             }, 5, true);
+            TerminalHelper.AddTermBtn<T>("anistage_rm_btn", "Remove stage", "Remove saved stage", lcd => {
+                if (lcd.selectedStages.Count < lcd.settings.Stages.Count)
+                {
+                    lcd.settings.Stages.RemoveAll(s => lcd.selectedStages.Contains(s));
+                }
+                lcd.selectedStages.Clear();
+            });
 
             use_modded_chbox = TerminalHelper.AddTermChbox<T>("modstore_chbox", "Use mod storage", "Untick to select custom data, it persists even when the mod isn't loaded but may cause conflicts with some scripts", (b, v) => b.UseModStorage = v, b => b.UseModStorage);
 
@@ -240,6 +251,7 @@ namespace Natomic.AngledLCDs
                             steps.Add(new AnimationStep { StageFrom = from.Name, StageTo = to.Name, Ticks = uint.Parse(ticks) });
                         }
                         lcd.settings.Steps.Add(new LCDSettings.AnimationChain { Steps = steps });
+                        lcd.selectedStages.Clear();
                     }
                 } catch(Exception e)
                 {
