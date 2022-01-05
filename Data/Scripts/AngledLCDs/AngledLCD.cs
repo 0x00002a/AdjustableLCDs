@@ -230,7 +230,7 @@ namespace Natomic.AngledLCDs
                 b.selectedStages.AddRange(items.Select(item => (AnimationStage)item.UserData));
 
             }, 5, true);
-            TerminalHelper.AddTermBtn<T>("anistage_rm_btn", "Remove stage", "Remove saved stage", lcd =>
+            AddEnabled(lcd => lcd != null && (lcd.selectedStages.Count > 0 && lcd.selectedStages.Count < lcd.settings.Stages.Count), TerminalHelper.AddTermBtn<T>("anistage_rm_btn", "Remove stage", "Remove saved stage", lcd =>
             {
                 if (lcd.selectedStages.Count < lcd.settings.Stages.Count)
                 {
@@ -239,47 +239,42 @@ namespace Natomic.AngledLCDs
                 lcd.selectedStages.Clear();
                 TerminalHelper.RefreshAll();
                 lcd.SaveData();
-            });
+            }));
 
-            var useModStore = TerminalHelper.AddTermChbox<T>("modstore_chbox", "Use mod storage", "Untick to select custom data, it persists even when the mod isn't loaded but may cause conflicts with some scripts", (b, v) => b.UseModStorage = v, b => b.UseModStorage);
-            var useModStoreEnable = (Func<IMyTerminalBlock, bool>)useModStore.Enabled.Clone();
-            useModStore.Enabled = b =>
-            {
-                if (!useModStoreEnable(b))
-                {
-                    return false;
-                }
-                var logic = b.GameLogic.GetAs<AngledLCD<T>>();
-                if (logic != null)
-                {
-                    return !logic.useModStorage || logic.settings.Steps.Count == 0;
-                }
-                return false;
-            };
+            AddEnabled(logic => logic != null && (!logic.useModStorage || logic.settings.Steps.Count == 0), TerminalHelper.AddTermChbox<T>("modstore_chbox", "Use mod storage", "Untick to select custom data, it persists even when the mod isn't loaded but may cause conflicts with some scripts", (b, v) => b.UseModStorage = v, b => b.UseModStorage));
 
             CtrlReqMStore(TerminalHelper.AddTermTxtbox<T>("anitimeframe_ent", "Animation ticks", "Ticks for the animation to take", (b, v) => b.animationTicksStr = v, b => b.animationTicksStr));
             CtrlReqMStore(TerminalHelper.AddTermBtn<T>("anistep_add", "Add step", "Add animation step", lcd => lcd.AddAnimationStep()));
             CtrlReqMStore(TerminalHelper.AddTermListSel<T>("anisteps_list", "Steps", "Animation steps", (b, content, sel) =>
                 {
-                    foreach(var step in b.settings.Steps)
+                    foreach (var step in b.settings.Steps)
                     {
-                    var item = new MyTerminalControlListBoxItem(MyStringId.GetOrCompute(step.ToString()), MyStringId.GetOrCompute(""), step);
-                    content.Add(item);
-                    if (step == b.currentAnimation)
-                    {
-                        sel.Add(item);
+                        var item = new MyTerminalControlListBoxItem(MyStringId.GetOrCompute(step.ToString()), MyStringId.GetOrCompute(""), step);
+                        content.Add(item);
+                        if (step == b.currentAnimation)
+                        {
+                            sel.Add(item);
+                        }
                     }
-                }
 
-            }, (b, items) =>
+                }, (b, items) =>
+                {
+                    b.currentAnimation = (LCDSettings.AnimationChain)items[0].UserData;
+                }, 5, false));
+            CtrlReqMStore(AddEnabled(lcd => lcd != null && lcd.currentAnimation != null,
+            TerminalHelper.AddTermBtn<T>("anistep_rm_btn", "Remove step", "Removes selected step", lcd => lcd.RemoveCurrAnimation()))); 
+            CtrlReqMStore(
+                AddEnabled(lcd => lcd != null && lcd.currentAnimation != null, 
+            TerminalHelper.AddTermBtn<T>("anistart_btn", "Start animation", "Starts the selected animation", lcd => lcd.StartAnimation())));
+        }
+        private static IMyTerminalControl AddEnabled(Func<AngledLCD<T>, bool> enable, IMyTerminalControl ctrl)
+        {
+            var savedEnable = (Func<IMyTerminalBlock, bool>)ctrl.Enabled.Clone();
+            ctrl.Enabled = b =>
             {
-                b.currentAnimation = (LCDSettings.AnimationChain)items[0].UserData;
-            }, 5, false));
-            CtrlReqMStore(
-            TerminalHelper.AddTermBtn<T>("anistep_rm_btn", "Remove step", "Removes selected step", lcd => lcd.RemoveCurrAnimation()));
-            CtrlReqMStore(
-            TerminalHelper.AddTermBtn<T>("anistart_btn", "Start animation", "Starts the selected animation", lcd => lcd.StartAnimation()));
-            
+                return savedEnable(b) && enable(b.GameLogic.GetAs<AngledLCD<T>>());
+            };
+            return ctrl;
         }
         private static void CtrlReqMStore(IMyTerminalControl ctrl)
         {
@@ -318,6 +313,10 @@ namespace Natomic.AngledLCDs
         }
         private void AddStage()
         {
+            if (stageNameStr.Length == 0)
+            {
+                return;
+            }
             if (settings.Stages.Count == 1 && settings.Stages[0].Name == "") // Special case: first stage added for this
             {
                 settings.Stages[0].Name = stageNameStr.ToString();
