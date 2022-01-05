@@ -16,7 +16,7 @@ namespace Natomic.AngledLCDs
         {
             Log.Error("GameLogic returned null for AngledLCD", "An installed mod is incompatible with Adjustable LCDs. The only current known incompatability is with https://steamcommunity.com/workshop/filedetails/?id=2217821984");
         }
-        public static IMyTerminalControlListbox AddTermListSel<T>(string name, string title, string tooltip, Action<AngledLCD<T>, List<MyTerminalControlListBoxItem>, List<MyTerminalControlListBoxItem>> setContent, Action<AngledLCD<T>, MyTerminalControlListBoxItem> onSel, int visibleRows)
+        public static IMyTerminalControlListbox AddTermListSel<T>(string name, string title, string tooltip, Action<AngledLCD<T>, List<MyTerminalControlListBoxItem>, List<MyTerminalControlListBoxItem>> setContent, Action<AngledLCD<T>, List<MyTerminalControlListBoxItem>> onSel, int visibleRows, bool multiSel)
             where T: IMyFunctionalBlock
         {
             var box = MyAPIGateway.TerminalControls.CreateControl<IMyTerminalControlListbox, T>(name);
@@ -24,7 +24,7 @@ namespace Natomic.AngledLCDs
             box.Tooltip = MyStringId.GetOrCompute(tooltip);
             box.SupportsMultipleBlocks = false;
             box.VisibleRowsCount = visibleRows;
-            box.Multiselect = true;
+            box.Multiselect = multiSel;
             box.ListContent = (b, content, sel) =>
             {
                 var lcd = b.GameLogic.GetAs<AngledLCD<T>>();
@@ -44,14 +44,14 @@ namespace Natomic.AngledLCDs
                 }
                 else
                 {
-                    onSel(lcd, item[0]);
+                    onSel(lcd, item);
                 }
             };
 
             MyAPIGateway.TerminalControls.AddControl<T>(box);
             return box;
         }
-        public static void AddTermChbox<T>(string name, string title, string tooltip, Action<AngledLCD<T>, bool> set, Func<AngledLCD<T>, bool> get)
+        public static IMyTerminalControlCheckbox AddTermChbox<T>(string name, string title, string tooltip, Action<AngledLCD<T>, bool> set, Func<AngledLCD<T>, bool> get)
             where T: IMyFunctionalBlock
         {
             var box = MyAPIGateway.TerminalControls.CreateControl<IMyTerminalControlCheckbox, T>(name);
@@ -85,6 +85,43 @@ namespace Natomic.AngledLCDs
             };
 
             MyAPIGateway.TerminalControls.AddControl<T>(box);
+            return box;
+        }
+        public static IMyTerminalControlButton AddTermBtn<T>(string name, string title, string tooltip, Action<AngledLCD<T>> act)
+            where T: IMyFunctionalBlock
+        {
+            var txtbox = MyAPIGateway.TerminalControls.CreateControl<IMyTerminalControlButton, T>(name);
+            txtbox.Title = MyStringId.GetOrCompute(title);
+            txtbox.Tooltip = MyStringId.GetOrCompute(tooltip);
+            txtbox.Enabled = b => b.GameLogic.GetAs<AngledLCD<T>>() != null;
+            txtbox.Action = b => { 
+                var lcd = b.GameLogic.GetAs<AngledLCD<T>>();
+                act(lcd);
+            };
+
+            MyAPIGateway.TerminalControls.AddControl<T>(txtbox);
+            return txtbox;
+        }
+        public static IMyTerminalControlTextbox AddTermTxtbox<T>(string name, string title, string tooltip, Action<AngledLCD<T>, StringBuilder> set, Func<AngledLCD<T>, StringBuilder> get)
+            where T: IMyFunctionalBlock
+        {
+            var txtbox = MyAPIGateway.TerminalControls.CreateControl<IMyTerminalControlTextbox, T>(name);
+            txtbox.Title = MyStringId.GetOrCompute(title);
+            txtbox.Tooltip = MyStringId.GetOrCompute(tooltip);
+            txtbox.Enabled = b => b.GameLogic.GetAs<AngledLCD<T>>() != null;
+            txtbox.Getter = b =>
+            {
+                var lcd = b.GameLogic.GetAs<AngledLCD<T>>();
+                return get(lcd);
+            };
+            txtbox.Setter = (b, val) =>
+            {
+                var lcd = b.GameLogic.GetAs<AngledLCD<T>>();
+                set(lcd, val);
+            };
+
+            MyAPIGateway.TerminalControls.AddControl<T>(txtbox);
+            return txtbox;
         }
         public static void AddTermSlider<T>(string name, string title, string tooltip, int lower, int upper, Action<AngledLCD<T>, float> set, Func<AngledLCD<T>, float> get)
             where T: IMyFunctionalBlock

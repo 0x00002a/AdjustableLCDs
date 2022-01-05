@@ -34,6 +34,7 @@ using System.Collections.Generic;
 using Sandbox.Game.EntityComponents;
 using System.Linq;
 using Sandbox.Game.Gui;
+using System.Text;
 
 namespace Natomic.AngledLCDs
 {
@@ -52,7 +53,10 @@ namespace Natomic.AngledLCDs
         private bool useModStorage = false;
 
         private static bool controls_created_ = false;
-        private static IMyTerminalControlListbox animation_stage_sel;
+        private static IMyTerminalControlCheckbox use_modded_chbox;
+        private static List<IMyTerminalControl> modded_storage_req_ctrls = new List<IMyTerminalControl>();
+        private StringBuilder animationTicksStr = new StringBuilder();
+        private List<AnimationStage> selectedStages = new List<AnimationStage>();
 
         private AnimationStage current_stage_;
         private LCDSettings settings;
@@ -192,25 +196,69 @@ namespace Natomic.AngledLCDs
             TerminalHelper.AddTermSlider<T>("yffs_slider", "Y Offset", "-10 to 10, up offset", -10, 10, (b, v) => b.UpOffset= v, b => b.UpOffset);
 
 
-            animation_stage_sel = TerminalHelper.AddTermListSel<T>("aniframes_sel", "Stages", "Stages optionally used for animations", (b, content, sel) =>
+            TerminalHelper.AddTermListSel<T>("aniframes_sel", "Stages", "Stages optionally used for animations", (b, content, sel) =>
             {
-                for (var n = 0; n != b.settings.Stages.Count; ++n)
+                foreach (var stage in b.settings.Stages)
                 {
-                    var item = new MyTerminalControlListBoxItem(MyStringId.GetOrCompute(n.ToString()), MyStringId.GetOrCompute("test"), b.settings.Stages[n]);
+                    var item = new MyTerminalControlListBoxItem(MyStringId.GetOrCompute(stage.Name), MyStringId.GetOrCompute(stage.Name), stage);
                     content.Add(item);
-                    if (b.current_stage_ != null && b.current_stage_ == b.settings.Stages[n])
+                    if (b.selectedStages.Contains(stage))
                     {
                         sel.Add(item);
                     }
                 }
 
-            }, (b, item) =>
+            }, (b, items) =>
             {
-                b.current_stage_ = (AnimationStage)item.UserData;
+                 b.current_stage_ = (AnimationStage)items[0].UserData;
                 b.positionUnchanged = false;
-            }, 5);
+                else
+                {
+                    b.selectedStages.Clear();
+                }
+                b.selectedStages.AddRange(items.Select(item => (AnimationStage)item.UserData));
+                
+            }, 5, true);
 
-            TerminalHelper.AddTermChbox<T>("modstore_chbox", "Use mod storage", "Untick to select custom data, it persists even when the mod isn't loaded but may cause conflicts with some scripts", (b, v) => b.UseModStorage = v, b => b.UseModStorage);
+            use_modded_chbox = TerminalHelper.AddTermChbox<T>("modstore_chbox", "Use mod storage", "Untick to select custom data, it persists even when the mod isn't loaded but may cause conflicts with some scripts", (b, v) => b.UseModStorage = v, b => b.UseModStorage);
+
+            TerminalHelper.AddTermTxtbox<T>("anitimeframe_ent", "Animation ticks", "Ticks for the animation to take", (b, v) => b.animationTicksStr = v, b => b.animationTicksStr);
+            TerminalHelper.AddTermBtn<T>("anistep_add", "Add step", "Add animation step", lcd =>
+            {
+                try
+                {
+                    var stages = lcd.selectedStages;
+                    var timesteps = lcd.animationTicksStr.ToString().Split(',');
+                    if (stages.Count > 1 && timesteps.Length >= 1)
+                    {
+                        var steps = new List<AnimationStep>();
+                        for (var n = 0; n != stages.Count - 1; ++n)
+                        {
+                            var from = stages[n];
+                            var to = stages[n + 1];
+                            var ticks = timesteps.Length < n ? timesteps[n] : timesteps[timesteps.Length - 1];
+                            steps.Add(new AnimationStep { StageFrom = from.Name, StageTo = to.Name, Ticks = uint.Parse(ticks) });
+                        }
+                        lcd.settings.Steps.Add(new LCDSettings.AnimationChain { Steps = steps });
+                    }
+                } catch(Exception e)
+                {
+                    Log.Error(e);
+                }
+            });
+
+            TerminalHelper.AddTermListSel<T>("anisteps_list", "Steps", "Animation steps", (b, content, sel) =>
+            {
+                foreach(var step in b.settings.Steps)
+                {
+                    var item = new MyTerminalControlListBoxItem(MyStringId.GetOrCompute(step.ToString()), MyStringId.GetOrCompute(""), step);
+                    content.Add(item);
+                }
+
+            }, (b, items) =>
+            {
+                
+            }, 5, false);
         }
 
         public override void UpdateOnceBeforeFrame()

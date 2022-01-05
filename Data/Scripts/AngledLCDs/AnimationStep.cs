@@ -15,5 +15,9 @@ namespace Natomic.AngledLCDs
         [ProtoMember(3)]
         public uint Ticks;
 
+        public override string ToString()
+        {
+            return $"{StageFrom}--{Ticks}->{StageTo}";
+        }
     }
 }

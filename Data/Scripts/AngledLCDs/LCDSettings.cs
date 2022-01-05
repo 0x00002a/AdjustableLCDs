@@ -14,8 +14,34 @@ namespace Natomic.AngledLCDs
     [ProtoContract]
     class LCDSettings
     {
+        [ProtoContract]
+        public struct AnimationChain
+        {
+            private List<AnimationStep> steps_cache_;
+            [ProtoMember(1)]
+            public List<AnimationStep> Steps
+            {
+                get
+                {
+                    if (steps_cache_ == null)
+                    {
+                        steps_cache_ = new List<AnimationStep>();
+                    }
+                    return steps_cache_;
+                } set { steps_cache_ = value;  }
+            }
+            public override string ToString()
+            {
+                string output = "";
+                foreach(var item in Steps)
+                {
+                    output += item.ToString();
+                }
+                return output;
+            }
+        };
         private List<AnimationStage> stages_cache_;
-        private List<AnimationStep> steps_cache_;
+        private List<AnimationChain> steps_cache_;
         [ProtoMember(1)]
         public List<AnimationStage> Stages { get
             {
@@ -27,11 +53,11 @@ namespace Natomic.AngledLCDs
             } set { stages_cache_ = value; }
         }
         [ProtoMember(2)]
-        public List<AnimationStep> Steps { get
+        public List<AnimationChain> Steps { get
             {
                 if (steps_cache_ == null)
                 {
-                    steps_cache_ = new List<AnimationStep>();
+                    steps_cache_ = new List<AnimationChain>();
                 }
                 return steps_cache_;
             } set { steps_cache_ = value; }
