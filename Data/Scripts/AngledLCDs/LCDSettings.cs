@@ -70,6 +70,7 @@ namespace Natomic.AngledLCDs
                 store.Set(TimecodeKey(sect), stage.Timecode);
                 ++n;
             }
+            store.AddSection(INI_SEC_NAME);
         }
         public static List<string> ReloadSectionsCache(MyIni store, List<string> cache)
         {
