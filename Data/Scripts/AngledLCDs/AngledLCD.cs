@@ -280,7 +280,17 @@ namespace Natomic.AngledLCDs
             {
                 b.currentAnimation = (LCDSettings.AnimationChain)items[0].UserData;
             }, 5, false);
+            TerminalHelper.AddTermBtn<T>("anistep_rm_btn", "Remove step", "Removes selected step", lcd => lcd.RemoveCurrAnimation());
             TerminalHelper.AddTermBtn<T>("anistart_btn", "Start animation", "Starts the selected animation", lcd => lcd.StartAnimation());
+        }
+        private void RemoveCurrAnimation()
+        {
+            if (currentAnimation == null)
+            {
+                return;
+            }
+            settings.Steps.Remove(currentAnimation);
+            SaveData();
         }
 
         private void StartAnimation()
