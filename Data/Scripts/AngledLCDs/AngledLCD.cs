@@ -163,10 +163,6 @@ namespace Natomic.AngledLCDs
             block = (T)Entity;
             NeedsUpdate = MyEntityUpdateEnum.BEFORE_NEXT_FRAME;
 
-            if (!controls_created_)
-            {
-                CreateTermControls();
-            }
             block.Hierarchy.OnParentChanged += (p1, p2) => OnMergeblockConnect();
         }
 
@@ -179,6 +175,8 @@ namespace Natomic.AngledLCDs
         }
         private static void CreateTermControls()
         {
+            controls_created_ = true;
+
             var sep = MyAPIGateway.TerminalControls.CreateControl<IMyTerminalControlSeparator, T>("angled_lcds_sep");
             MyAPIGateway.TerminalControls.AddControl<T>(sep);
 
@@ -188,14 +186,16 @@ namespace Natomic.AngledLCDs
             TerminalHelper.AddTermSlider<T>("xffs_slider", "Z Offset", "-10 to 10, forward offset", -10, 10, (b, v) => b.ForwardOffset = v, b => b.ForwardOffset);
             TerminalHelper.AddTermSlider<T>("zffs_slider", "X Offset", "-10 to 10, left offset", -10, 10, (b, v) => b.LeftOffset = v, b => b.LeftOffset);
             TerminalHelper.AddTermSlider<T>("yffs_slider", "Y Offset", "-10 to 10, up offset", -10, 10, (b, v) => b.UpOffset= v, b => b.UpOffset);
-            TerminalHelper.AddTermChbox<T>("modstore_chbox", "Use mod storage", "-10 to 10, up offset", -10, 10, (b, v) => b.UseModStorage = v, b => b.UseModStorage);
-            
-
-            controls_created_ = true;
+            TerminalHelper.AddTermChbox<T>("modstore_chbox", "Use mod storage", "Untick to select custom data, it persists even when the mod isn't loaded but may cause conflicts with some scripts", (b, v) => b.UseModStorage = v, b => b.UseModStorage);
         }
 
         public override void UpdateOnceBeforeFrame()
         {
+            if (!controls_created_)
+            {
+                CreateTermControls();
+            }
+
             if (block.CubeGrid?.Physics == null) // ignore projected and other non-physical grids
                 return;
 
