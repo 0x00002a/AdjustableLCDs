@@ -28,7 +28,7 @@ namespace Natomic.AngledLCDs
         {
             if (store == null)
             {
-                throw new InvalidBranchException("tried to load from null store");
+                throw new ArgumentException("tried to load from null store");
             }
             var binary = Convert.FromBase64String(store[modStorageId]);
             return MyAPIGateway.Utilities.SerializeFromBinary<LCDSettings>(binary);

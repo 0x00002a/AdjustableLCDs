@@ -85,7 +85,7 @@ namespace Natomic.AngledLCDs
         {
             if (code > Timecode)
             {
-                throw new InvalidBranchException($"timecode exceeds animation stage timecode: {code} > {Timecode}");
+                throw new ArgumentException($"timecode exceeds animation stage timecode: {code} > {Timecode}");
             }
             var target = TargetLocation(origin);
             var translation = target - from;
