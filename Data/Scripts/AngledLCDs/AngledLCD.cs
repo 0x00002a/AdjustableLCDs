@@ -30,6 +30,7 @@ using Sandbox.Game.Components;
 using Sandbox.ModAPI.Interfaces.Terminal;
 using VRage.Utils;
 using VRage.Game.ModAPI.Ingame.Utilities;
+using System.Collections.Generic;
 
 namespace Natomic.AngledLCDs
 {
@@ -45,79 +46,80 @@ namespace Natomic.AngledLCDs
         private bool positionUnchanged = true;
         private bool originValid = false;
 
-        private float azimuth_degs_ = 0f;
-        private float pitch_degs_ = 0f;
         private static bool controls_created_ = false;
-        private Vector3D offset_ = new Vector3D(0, 0, 0);
+        private AnimationStage current_stage_;
+        private List<AnimationStage> stages_ = new List<AnimationStage>();
 
-        internal float roll_degs_ = 0f;
 
         public float RollDegs
         {
             set
             {
-                roll_degs_ = value;
+                current_stage_.RollDegs = value;
                 positionUnchanged = false;
-            } get { return roll_degs_;  }
+            } get { return current_stage_.RollDegs;  }
         }
 
         public float AzimuthDegs { set
             {
-                azimuth_degs_ = value;
+                current_stage_.AzimuthDegs = value;
                 positionUnchanged = false;
-            } get { return azimuth_degs_; } }
+            } get { return current_stage_.AzimuthDegs; } }
         public float PitchDegs
         {
             set
             {
-                pitch_degs_ = value;
+                current_stage_.PitchDegs = value;
                 positionUnchanged = false;
             }
-            get { return pitch_degs_; }
+            get { return current_stage_.PitchDegs; }
         }
         public float ForwardOffset
         {
             set
             {
-                offset_.X = value;
+                current_stage_.X = value;
                 positionUnchanged = false;
             } 
             get
             {
-                return (float)offset_.X;
+                return (float)current_stage_.X;
             }
         }
         public float LeftOffset
         {
             set
             {
-                offset_.Y = value;
+                current_stage_.Y = value;
                 positionUnchanged = false;
             }
             get
             {
-                return (float)offset_.Y;
+                return (float)current_stage_.Y;
             }
         }
         public float UpOffset
         {
             set
             {
-                offset_.Z = value;
+                current_stage_.Z = value;
                 positionUnchanged = false;
             } 
             get
             {
-                return (float)offset_.Z;
+                return (float)current_stage_.Z;
             }
         }
         private Matrix origin_;
         private readonly MyIni ini_helper_ = new MyIni();
         private const string INI_SEC_NAME = "AngledLCDs Save Data";
-        private readonly MyIniKey azimuth_key_ = new MyIniKey(INI_SEC_NAME, "azimuth");
-        private readonly MyIniKey pitch_key_ = new MyIniKey(INI_SEC_NAME, "pitch");
-        private readonly MyIniKey roll_key_ = new MyIniKey(INI_SEC_NAME, "roll");
-        private readonly MyIniKey offset_key_ = new MyIniKey(INI_SEC_NAME, "offset");
+        private MyIniKey AzimuthKey(string sec) => new MyIniKey(sec, "azimuth");
+        private MyIniKey PitchKey(string sec) => new MyIniKey(sec, "pitch");
+        private MyIniKey RollKey(string sec) => new MyIniKey(sec, "roll");
+        private MyIniKey OffsetKey(string sec) => new MyIniKey(sec, "offset");
+        private MyIniKey TimecodeKey(string sec) => new MyIniKey(sec, "timecode");
+
+        private static string CreateStageSectName(int num) => AnimationStage.SectionName + ":" + num.ToString();
         
 
         public override void Init(MyObjectBuilder_EntityBase objectBuilder)
@@ -219,17 +221,45 @@ namespace Natomic.AngledLCDs
         
         private void LoadData()
         {
+            var sections_cache = new List<string>();
+            sections_cache.Add(INI_SEC_NAME);
             var data = block.CustomData;
             if (ini_helper_.TryParse(data))
             {
-                AzimuthDegs = (float)ini_helper_.Get(azimuth_key_).ToDouble();
-                PitchDegs = (float)ini_helper_.Get(pitch_key_).ToDouble();
-                double roll = roll_degs_;
-                ini_helper_.Get(roll_key_).TryGetDouble(out roll);
-                RollDegs = (float)roll;
-                Vector3D.TryParse(ini_helper_.Get(offset_key_).ToString(), out offset_);
+                ini_helper_.GetSections(sections_cache);
+                foreach (var section in sections_cache)
+                {
+                    if (section.StartsWith(AnimationStage.SectionName))
+                    {
+                        var animation = new AnimationStage
+                        {
+                            AzimuthDegs = (float)ini_helper_.Get(AzimuthKey(section)).ToDouble(),
+                            PitchDegs = (float)ini_helper_.Get(PitchKey(section)).ToDouble(),
+                            RollDegs = (float)ini_helper_.Get(RollKey(section)).ToDouble(),
+                            Timecode = ini_helper_.Get(TimecodeKey(section)).ToUInt32(),
+                        };
+
+                        Vector3D.TryParse(ini_helper_.Get(OffsetKey(section)).ToString(), out var offset);
+                        animation.Offset = offset;
+                    }
+                }
             }
 
+        }
+        private void SaveToIni()
+        {
+            var n = 0;
+            foreach (var stage in stages_)
+            {
+                var sect = CreateStageSectName(n);
+                ini_helper_.AddSection(sect);
+                ini_helper_.Set(AzimuthKey(sect), stage.AzimuthDegs);
+                ini_helper_.Set(PitchKey(sect), stage.PitchDegs);
+                ini_helper_.Set(RollKey(sect), stage.RollDegs);
+                ini_helper_.Set(OffsetKey(sect), stage.Offset.ToString());
+                ini_helper_.Set(TimecodeKey(sect), stage.Timecode);
+                ++n;
+            }
         }
         private void SaveData()
         {
@@ -239,25 +269,11 @@ namespace Natomic.AngledLCDs
                 Log.Error($"Failed to save block data: {msg}", msg);
                 return;
             }
-
-            ini_helper_.AddSection(INI_SEC_NAME);
-            ini_helper_.Set(azimuth_key_, azimuth_degs_);
-            ini_helper_.Set(pitch_key_, pitch_degs_);
-            ini_helper_.Set(roll_key_, roll_degs_);
-            ini_helper_.Set(offset_key_, offset_.ToString());
-
+            SaveToIni();
+            
             block.CustomData = ini_helper_.ToString();
         }
 
-        private void OriginRotate(ref Matrix by, Vector3D origin, Matrix translation)
-        {
-            by *= Matrix.CreateTranslation(-origin); // Move it to the origin
-             
-            by *= translation; // Pivot around 0, 0
-
-            by *= Matrix.CreateTranslation(origin); // Move it back
- 
-        }
 
         public override void UpdateBeforeSimulation10()
         {
@@ -265,7 +281,6 @@ namespace Natomic.AngledLCDs
             {
                 if (!positionUnchanged)
                 {
-
                     if (!originValid)
                     {
                         origin_ = block.PositionComp.LocalMatrixRef;
@@ -273,26 +288,11 @@ namespace Natomic.AngledLCDs
                         originValid = true;
                     }
 
-                    subpartLocalMatrix = origin_;
-                    var localForward = origin_.Right;
-                    var gridForward = block.CubeGrid.PositionComp.LocalMatrixRef.Forward;
-
-                    var angle_transform = Matrix.CreateFromAxisAngle(localForward, MathHelper.ToRadians(pitch_degs_))
-                                        * Matrix.CreateFromAxisAngle(origin_.Up, MathHelper.ToRadians(azimuth_degs_))
-                                        * Matrix.CreateFromAxisAngle(origin_.Forward, MathHelper.ToRadians(roll_degs_));
-                    OriginRotate(ref subpartLocalMatrix, subpartLocalMatrix.Translation, angle_transform);
-                    subpartLocalMatrix *= Matrix.CreateTranslation((Vector3D)subpartLocalMatrix.Forward * offset_.X);
-                    subpartLocalMatrix *= Matrix.CreateTranslation((Vector3D)subpartLocalMatrix.Left * LeftOffset);
-                    subpartLocalMatrix *= Matrix.CreateTranslation((Vector3D)subpartLocalMatrix.Up * UpOffset);
-
-                    subpartLocalMatrix = Matrix.Normalize(subpartLocalMatrix);
+                    subpartLocalMatrix = current_stage_.TargetLocation(origin_);
 
                     block.PositionComp.SetLocalMatrix(ref subpartLocalMatrix);
 
-
-
-                    var b = block as IMyFunctionalBlock;
-                    if (b != null) // This is hacky af but turning it off and on again updates it apparently
+                    if (block is IMyFunctionalBlock b) // This is hacky af but turning it off and on again updates it apparently
                     {
                         b.Enabled = false;
                         b.Enabled = true;
