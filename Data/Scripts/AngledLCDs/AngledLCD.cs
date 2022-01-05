@@ -32,6 +32,8 @@ using VRage.Utils;
 using VRage.Game.ModAPI.Ingame.Utilities;
 using System.Collections.Generic;
 using Sandbox.Game.EntityComponents;
+using System.Linq;
+using Sandbox.Game.Gui;
 
 namespace Natomic.AngledLCDs
 {
@@ -50,6 +52,8 @@ namespace Natomic.AngledLCDs
         private bool useModStorage = false;
 
         private static bool controls_created_ = false;
+        private static IMyTerminalControlListbox animation_stage_sel;
+
         private AnimationStage current_stage_;
         private LCDSettings settings;
 
@@ -186,6 +190,26 @@ namespace Natomic.AngledLCDs
             TerminalHelper.AddTermSlider<T>("xffs_slider", "Z Offset", "-10 to 10, forward offset", -10, 10, (b, v) => b.ForwardOffset = v, b => b.ForwardOffset);
             TerminalHelper.AddTermSlider<T>("zffs_slider", "X Offset", "-10 to 10, left offset", -10, 10, (b, v) => b.LeftOffset = v, b => b.LeftOffset);
             TerminalHelper.AddTermSlider<T>("yffs_slider", "Y Offset", "-10 to 10, up offset", -10, 10, (b, v) => b.UpOffset= v, b => b.UpOffset);
+
+
+            animation_stage_sel = TerminalHelper.AddTermListSel<T>("aniframes_sel", "Stages", "Stages optionally used for animations", (b, content, sel) =>
+            {
+                for (var n = 0; n != b.settings.Stages.Count; ++n)
+                {
+                    var item = new MyTerminalControlListBoxItem(MyStringId.GetOrCompute(n.ToString()), MyStringId.GetOrCompute("test"), b.settings.Stages[n]);
+                    content.Add(item);
+                    if (b.current_stage_ != null && b.current_stage_ == b.settings.Stages[n])
+                    {
+                        sel.Add(item);
+                    }
+                }
+
+            }, (b, item) =>
+            {
+                b.current_stage_ = (AnimationStage)item.UserData;
+                b.positionUnchanged = false;
+            }, 5);
+
             TerminalHelper.AddTermChbox<T>("modstore_chbox", "Use mod storage", "Untick to select custom data, it persists even when the mod isn't loaded but may cause conflicts with some scripts", (b, v) => b.UseModStorage = v, b => b.UseModStorage);
         }
 

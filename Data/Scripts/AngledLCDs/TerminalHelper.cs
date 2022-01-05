@@ -4,6 +4,7 @@ using Sandbox.ModAPI.Interfaces.Terminal;
 using System;
 using System.Collections.Generic;
 using System.Text;
+using VRage.ModAPI;
 using VRage.Utils;
 
 namespace Natomic.AngledLCDs
@@ -14,6 +15,41 @@ namespace Natomic.AngledLCDs
         private static void LogInvalidScript()
         {
             Log.Error("GameLogic returned null for AngledLCD", "An installed mod is incompatible with Adjustable LCDs. The only current known incompatability is with https://steamcommunity.com/workshop/filedetails/?id=2217821984");
+        }
+        public static IMyTerminalControlListbox AddTermListSel<T>(string name, string title, string tooltip, Action<AngledLCD<T>, List<MyTerminalControlListBoxItem>, List<MyTerminalControlListBoxItem>> setContent, Action<AngledLCD<T>, MyTerminalControlListBoxItem> onSel, int visibleRows)
+            where T: IMyFunctionalBlock
+        {
+            var box = MyAPIGateway.TerminalControls.CreateControl<IMyTerminalControlListbox, T>(name);
+            box.Title = MyStringId.GetOrCompute(title);
+            box.Tooltip = MyStringId.GetOrCompute(tooltip);
+            box.SupportsMultipleBlocks = false;
+            box.VisibleRowsCount = visibleRows;
+            box.Multiselect = false;
+            box.ListContent = (b, content, sel) =>
+            {
+                var lcd = b.GameLogic.GetAs<AngledLCD<T>>();
+                if (lcd == null)
+                {
+                    LogInvalidScript();
+                } else
+                {
+                    setContent(lcd, content, sel);
+                }
+            };
+            box.ItemSelected = (b, item) => {
+                var lcd = b.GameLogic.GetAs<AngledLCD<T>>();
+                if (lcd == null)
+                {
+                    LogInvalidScript();
+                }
+                else
+                {
+                    onSel(lcd, item[0]);
+                }
+            };
+
+            MyAPIGateway.TerminalControls.AddControl<T>(box);
+            return box;
         }
         public static void AddTermChbox<T>(string name, string title, string tooltip, Action<AngledLCD<T>, bool> set, Func<AngledLCD<T>, bool> get)
             where T: IMyFunctionalBlock
