@@ -294,7 +294,6 @@ namespace Natomic.AngledLCDs
                 animationCtrl = new AnimationController(settings.Stages);
             }
             animationCtrl.Reset(currentAnimation.Steps);
-            currentAnimation = null;
             NeedsUpdate |= MyEntityUpdateEnum.EACH_FRAME;
         }
         public override void UpdateAfterSimulation() // Used for animation
