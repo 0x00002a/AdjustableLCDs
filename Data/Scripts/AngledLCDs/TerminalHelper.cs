@@ -25,6 +25,15 @@ namespace Natomic.AngledLCDs
         {
             Log.Error("GameLogic returned null for AngledLCD", "An installed mod is incompatible with Adjustable LCDs. The only current known incompatability is with https://steamcommunity.com/workshop/filedetails/?id=2217821984");
         }
+        public static IMyTerminalAction AddTermAct<T>(string id, string name, Action<AngledLCD<T>> cb)
+            where T: IMyFunctionalBlock
+        {
+            var act = MyAPIGateway.TerminalControls.CreateAction<T>(id);
+            act.Name = new StringBuilder(name);
+            act.Action = b => cb(b.GameLogic.GetAs<AngledLCD<T>>());
+            MyAPIGateway.TerminalControls.AddAction<T>(act);
+            return act;
+        }
         public static IMyTerminalControlListbox AddTermListSel<T>(string name, string title, string tooltip, Action<AngledLCD<T>, List<MyTerminalControlListBoxItem>, List<MyTerminalControlListBoxItem>> setContent, Action<AngledLCD<T>, List<MyTerminalControlListBoxItem>> onSel, int visibleRows, bool multiSel)
             where T: IMyFunctionalBlock
         {

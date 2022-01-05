@@ -187,12 +187,45 @@ namespace Natomic.AngledLCDs
             positionUnchanged = false;
             originValid = false;
         }
+
+        private void DecSelAnimation()
+        {
+            if (currentAnimation == null)
+            {
+                return;
+            }
+            var nextIdx = settings.Steps.IndexOf(currentAnimation) - 1;
+            if (nextIdx < 0)
+            {
+                return;
+            }
+            currentAnimation = settings.Steps[nextIdx];
+            if (animationCtrl?.Valid ?? false) StartAnimation();
+        }
+        private void IncSelAnimation()
+        {
+            if (currentAnimation == null)
+            {
+                return;
+            }
+            var nextIdx = settings.Steps.IndexOf(currentAnimation) + 1;
+            if (nextIdx >= settings.Steps.Count)
+            {
+                return;
+            }
+            currentAnimation = settings.Steps[nextIdx];
+            if (animationCtrl?.Valid ?? false) StartAnimation();
+        }
         private static void CreateTermControls()
         {
             controls_created_ = true;
 
             var sep = MyAPIGateway.TerminalControls.CreateControl<IMyTerminalControlSeparator, T>("angled_lcds_sep");
             MyAPIGateway.TerminalControls.AddControl<T>(sep);
+
+            TerminalHelper.AddTermAct<T>("trigger_animation_act", "Start animation", lcd => lcd?.StartAnimation());
+            TerminalHelper.AddTermAct<T>("trigger_animation_inc_act", "Next animation", lcd => lcd?.IncSelAnimation());
+            TerminalHelper.AddTermAct<T>("trigger_animation_dec_act", "Last animation", lcd => lcd?.DecSelAnimation());
 
             TerminalHelper.AddTermSlider<T>("zrot_slider", "Pitch", "-180 to 180 in degrees", -180, 180, (b, v) => b.PitchDegs = v, b => b.PitchDegs);
             TerminalHelper.AddTermSlider<T>("xrot_slider", "Yaw", "-180 to 180 in degrees", -180, 180, (b, v) => b.AzimuthDegs = v, b => b.AzimuthDegs);
