@@ -234,6 +234,7 @@ namespace Natomic.AngledLCDs
                     lcd.settings.Stages.RemoveAll(s => lcd.selectedStages.Contains(s));
                 }
                 lcd.selectedStages.Clear();
+                TerminalHelper.RefreshAll();
                 lcd.SaveData();
             });
 
@@ -258,6 +259,7 @@ namespace Natomic.AngledLCDs
                         }
                         lcd.settings.Steps.Add(new LCDSettings.AnimationChain { Steps = steps });
                         lcd.selectedStages.Clear();
+                        TerminalHelper.RefreshAll();
                     }
                 } catch(Exception e)
                 {
@@ -294,6 +296,7 @@ namespace Natomic.AngledLCDs
                 settings.Stages.Add(new AnimationStage { Name = stageNameStr.ToString() });
             }
             stageNameStr.Clear();
+            TerminalHelper.RefreshAll();
             SaveData();
         }
         private void RemoveCurrAnimation()
@@ -303,6 +306,7 @@ namespace Natomic.AngledLCDs
                 return;
             }
             settings.Steps.Remove(currentAnimation);
+            TerminalHelper.RefreshAll();
             SaveData();
         }
 

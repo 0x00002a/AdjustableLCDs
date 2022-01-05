@@ -11,6 +11,15 @@ namespace Natomic.AngledLCDs
 {
     static class TerminalHelper
     {
+        private static List<IMyTerminalControl> controls_ = new List<IMyTerminalControl>();
+
+        public static void RefreshAll()
+        {
+            foreach(var ctrl in controls_)
+            {
+                ctrl.UpdateVisual();
+            }
+        }
 
         private static void LogInvalidScript()
         {
@@ -49,6 +58,7 @@ namespace Natomic.AngledLCDs
             };
 
             MyAPIGateway.TerminalControls.AddControl<T>(box);
+            controls_.Add(box);
             return box;
         }
         public static IMyTerminalControlCheckbox AddTermChbox<T>(string name, string title, string tooltip, Action<AngledLCD<T>, bool> set, Func<AngledLCD<T>, bool> get)
@@ -85,6 +95,7 @@ namespace Natomic.AngledLCDs
             };
 
             MyAPIGateway.TerminalControls.AddControl<T>(box);
+            controls_.Add(box);
             return box;
         }
         public static IMyTerminalControlButton AddTermBtn<T>(string name, string title, string tooltip, Action<AngledLCD<T>> act)
@@ -100,6 +111,7 @@ namespace Natomic.AngledLCDs
             };
 
             MyAPIGateway.TerminalControls.AddControl<T>(txtbox);
+            controls_.Add(txtbox);
             return txtbox;
         }
         public static IMyTerminalControlTextbox AddTermTxtbox<T>(string name, string title, string tooltip, Action<AngledLCD<T>, StringBuilder> set, Func<AngledLCD<T>, StringBuilder> get)
@@ -168,7 +180,7 @@ namespace Natomic.AngledLCDs
                     str.Append(Math.Round(get(lcd), 2));
                 }
             };
-
+            controls_.Add(slider);
             MyAPIGateway.TerminalControls.AddControl<T>(slider);
         }
     }
