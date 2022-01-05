@@ -228,6 +228,7 @@ namespace Natomic.AngledLCDs
                 b.positionUnchanged = false;
                 b.selectedStages.Clear();
                 b.selectedStages.AddRange(items.Select(item => (AnimationStage)item.UserData));
+                TerminalHelper.RefreshAll();
 
             }, 5, true);
             AddEnabled(lcd => lcd != null && (lcd.selectedStages.Count > 0 && lcd.selectedStages.Count < lcd.settings.Stages.Count), TerminalHelper.AddTermBtn<T>("anistage_rm_btn", "Remove stage", "Remove saved stage", lcd =>
@@ -244,7 +245,9 @@ namespace Natomic.AngledLCDs
             AddEnabled(logic => logic != null && (!logic.useModStorage || logic.settings.Steps.Count == 0), TerminalHelper.AddTermChbox<T>("modstore_chbox", "Use mod storage", "Untick to select custom data, it persists even when the mod isn't loaded but may cause conflicts with some scripts", (b, v) => b.UseModStorage = v, b => b.UseModStorage));
 
             CtrlReqMStore(TerminalHelper.AddTermTxtbox<T>("anitimeframe_ent", "Animation ticks", "Ticks for the animation to take", (b, v) => b.animationTicksStr = v, b => b.animationTicksStr));
-            CtrlReqMStore(TerminalHelper.AddTermBtn<T>("anistep_add", "Add step", "Add animation step", lcd => lcd.AddAnimationStep()));
+            CtrlReqMStore(
+                AddEnabled(lcd => lcd != null && lcd.selectedStages.Count > 1,
+                TerminalHelper.AddTermBtn<T>("anistep_add", "Add step", "Add animation step", lcd => lcd.AddAnimationStep())));
             CtrlReqMStore(TerminalHelper.AddTermListSel<T>("anisteps_list", "Steps", "Animation steps", (b, content, sel) =>
                 {
                     foreach (var step in b.settings.Steps)
@@ -260,6 +263,7 @@ namespace Natomic.AngledLCDs
                 }, (b, items) =>
                 {
                     b.currentAnimation = (LCDSettings.AnimationChain)items[0].UserData;
+                    TerminalHelper.RefreshAll();
                 }, 5, false));
             CtrlReqMStore(AddEnabled(lcd => lcd != null && lcd.currentAnimation != null,
             TerminalHelper.AddTermBtn<T>("anistep_rm_btn", "Remove step", "Removes selected step", lcd => lcd.RemoveCurrAnimation()))); 
