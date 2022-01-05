@@ -31,6 +31,7 @@ using Sandbox.ModAPI.Interfaces.Terminal;
 using VRage.Utils;
 using VRage.Game.ModAPI.Ingame.Utilities;
 using System.Collections.Generic;
+using Sandbox.Game.EntityComponents;
 
 namespace Natomic.AngledLCDs
 {
@@ -46,10 +47,33 @@ namespace Natomic.AngledLCDs
         private bool positionUnchanged = true;
         private bool originValid = false;
 
+        private bool useModStorage = false;
+
         private static bool controls_created_ = false;
         private AnimationStage current_stage_;
-        private List<AnimationStage> stages_ = new List<AnimationStage>();
+        private LCDSettings settings;
 
+
+        private readonly List<string> sections_cache = new List<string>();
+
+        private bool UseModStorage
+        {
+            set
+            {
+                if (value && !useModStorage)
+                {
+                    MigrateToModStore();
+                }
+                else if (!value && useModStorage)
+                {
+                    MigrateToCustomDataStore();
+                }
+            }
+            get
+            {
+                return useModStorage;
+            }
+        }
 
         public float RollDegs
         {
@@ -112,14 +136,26 @@ namespace Natomic.AngledLCDs
         }
         private Matrix origin_;
         private readonly MyIni ini_helper_ = new MyIni();
-        private const string INI_SEC_NAME = "AngledLCDs Save Data";
-        private MyIniKey AzimuthKey(string sec) => new MyIniKey(sec, "azimuth");
-        private MyIniKey PitchKey(string sec) => new MyIniKey(sec, "pitch");
-        private MyIniKey RollKey(string sec) => new MyIniKey(sec, "roll");
-        private MyIniKey OffsetKey(string sec) => new MyIniKey(sec, "offset");
-        private MyIniKey TimecodeKey(string sec) => new MyIniKey(sec, "timecode");
 
-        private static string CreateStageSectName(int num) => AnimationStage.SectionName + ":" + num.ToString();
+        private void MigrateToModStore()
+        {
+            useModStorage = true;
+            LCDSettings.ReloadSectionsCache(ini_helper_, sections_cache);
+
+            foreach(var sect in sections_cache)
+            {
+                ini_helper_.DeleteSection(sect);
+            }
+            block.CustomData = ini_helper_.ToString();
+            SaveData();
+        }
+        private void MigrateToCustomDataStore()
+        {
+            useModStorage = false;
+
+            block.Storage?.Remove(LCDSettings.modStorageId);
+            SaveData();
+        }
         
 
         public override void Init(MyObjectBuilder_EntityBase objectBuilder)
@@ -141,71 +177,19 @@ namespace Natomic.AngledLCDs
             positionUnchanged = false;
             originValid = false;
         }
-
-        private static void LogInvalidScript()
-        {
-            Log.Error("GameLogic returned null for AngledLCD", "An installed mod is incompatible with Adjustable LCDs. The only current known incompatability is with https://steamcommunity.com/workshop/filedetails/?id=2217821984");
-        }
-        private static void AddTermSlider(string name, string title, string tooltip, int lower, int upper, Action<AngledLCD<T>, float> set, Func<AngledLCD<T>, float> get)
-        {
-            var slider = MyAPIGateway.TerminalControls.CreateControl<IMyTerminalControlSlider, T>(name);
-            slider.Title = MyStringId.GetOrCompute(title);
-            slider.Tooltip = MyStringId.GetOrCompute(tooltip);
-            slider.SetLimits(lower, upper);
-            slider.Getter = b =>
-            {
-                var lcd = b.GameLogic.GetAs<AngledLCD<T>>();
-                if (lcd == null)
-                {
-                    LogInvalidScript();
-                    return 0.0f;
-                }
-                else
-                {
-                    return get(lcd);
-                }
-            };
-            slider.Setter = (b, val) =>
-            {
-                var lcd = b.GameLogic.GetAs<AngledLCD<T>>();
-                if (lcd == null)
-                {
-                    LogInvalidScript();
-                }
-                else
-                {
-                    set(lcd, val);
-                    lcd.SaveData();
-                }
-            };
-            slider.Writer = (b, str) =>
-            {
-                var lcd = b.GameLogic.GetAs<AngledLCD<T>>();
-                if (lcd == null)
-                {
-                    LogInvalidScript();
-                }
-                else
-                {
-                    str.Append(Math.Round(get(lcd), 2));
-                }
-            };
-
-            MyAPIGateway.TerminalControls.AddControl<T>(slider);
-            
-        }
         private static void CreateTermControls()
         {
             var sep = MyAPIGateway.TerminalControls.CreateControl<IMyTerminalControlSeparator, T>("angled_lcds_sep");
             MyAPIGateway.TerminalControls.AddControl<T>(sep);
 
-            AddTermSlider("zrot_slider", "Pitch", "-180 to 180 in degrees", -180, 180, (b, v) => b.PitchDegs = v, b => b.PitchDegs);
-            AddTermSlider("xrot_slider", "Yaw", "-180 to 180 in degrees", -180, 180, (b, v) => b.AzimuthDegs = v, b => b.AzimuthDegs);
-            AddTermSlider("yrot_slider", "Roll", "-180 to 180 in degrees", -180, 180, (b, v) => b.RollDegs = v, b => b.RollDegs);
-            AddTermSlider("xffs_slider", "Z Offset", "-10 to 10, forward offset", -10, 10, (b, v) => b.ForwardOffset = v, b => b.ForwardOffset);
-            AddTermSlider("zffs_slider", "X Offset", "-10 to 10, left offset", -10, 10, (b, v) => b.LeftOffset = v, b => b.LeftOffset);
-            AddTermSlider("yffs_slider", "Y Offset", "-10 to 10, up offset", -10, 10, (b, v) => b.UpOffset= v, b => b.UpOffset);
-                
+            TerminalHelper.AddTermSlider<T>("zrot_slider", "Pitch", "-180 to 180 in degrees", -180, 180, (b, v) => b.PitchDegs = v, b => b.PitchDegs);
+            TerminalHelper.AddTermSlider<T>("xrot_slider", "Yaw", "-180 to 180 in degrees", -180, 180, (b, v) => b.AzimuthDegs = v, b => b.AzimuthDegs);
+            TerminalHelper.AddTermSlider<T>("yrot_slider", "Roll", "-180 to 180 in degrees", -180, 180, (b, v) => b.RollDegs = v, b => b.RollDegs);
+            TerminalHelper.AddTermSlider<T>("xffs_slider", "Z Offset", "-10 to 10, forward offset", -10, 10, (b, v) => b.ForwardOffset = v, b => b.ForwardOffset);
+            TerminalHelper.AddTermSlider<T>("zffs_slider", "X Offset", "-10 to 10, left offset", -10, 10, (b, v) => b.LeftOffset = v, b => b.LeftOffset);
+            TerminalHelper.AddTermSlider<T>("yffs_slider", "Y Offset", "-10 to 10, up offset", -10, 10, (b, v) => b.UpOffset= v, b => b.UpOffset);
+            TerminalHelper.AddTermChbox<T>("modstore_chbox", "Use mod storage", "-10 to 10, up offset", -10, 10, (b, v) => b.UseModStorage = v, b => b.UseModStorage);
+            
 
             controls_created_ = true;
         }
@@ -221,57 +205,43 @@ namespace Natomic.AngledLCDs
         
         private void LoadData()
         {
-            var sections_cache = new List<string>();
-            sections_cache.Add(INI_SEC_NAME);
-            var data = block.CustomData;
-            if (ini_helper_.TryParse(data))
+            useModStorage = block.Storage?.ContainsKey(LCDSettings.modStorageId) ?? false;
+            if (!UseModStorage)
             {
-                ini_helper_.GetSections(sections_cache);
-                foreach (var section in sections_cache)
+                var data = block.CustomData;
+                if (ini_helper_.TryParse(data))
                 {
-                    if (section.StartsWith(AnimationStage.SectionName))
+                    if (!ini_helper_.ContainsSection(LCDSettings.INI_SEC_NAME)) // First use of mod, default to mod storage
                     {
-                        var animation = new AnimationStage
-                        {
-                            AzimuthDegs = (float)ini_helper_.Get(AzimuthKey(section)).ToDouble(),
-                            PitchDegs = (float)ini_helper_.Get(PitchKey(section)).ToDouble(),
-                            RollDegs = (float)ini_helper_.Get(RollKey(section)).ToDouble(),
-                            Timecode = ini_helper_.Get(TimecodeKey(section)).ToUInt32(),
-                        };
-
-                        Vector3D.TryParse(ini_helper_.Get(OffsetKey(section)).ToString(), out var offset);
-                        animation.Offset = offset;
+                        UseModStorage = true;
+                        return;
                     }
+
+                    settings = LCDSettings.LoadFrom(ini_helper_, sections_cache);
                 }
+            } else
+            {
+                settings = LCDSettings.LoadFrom(block.Storage);
             }
 
         }
-        private void SaveToIni()
+        public void SaveData()
         {
-            var n = 0;
-            foreach (var stage in stages_)
+            if (!UseModStorage) { 
+                if (block.CustomData.Length > 0 && !ini_helper_.TryParse(block.CustomData))
+                {
+                    var msg = $"Custom data of {block.CustomName} is incorrectly formatted";
+                    Log.Error($"Failed to save block data: {msg}", msg);
+                    return;
+                }
+
+                settings.SaveTo(ini_helper_);
+                block.CustomData = ini_helper_.ToString();
+            } else
             {
-                var sect = CreateStageSectName(n);
-                ini_helper_.AddSection(sect);
-                ini_helper_.Set(AzimuthKey(sect), stage.AzimuthDegs);
-                ini_helper_.Set(PitchKey(sect), stage.PitchDegs);
-                ini_helper_.Set(RollKey(sect), stage.RollDegs);
-                ini_helper_.Set(OffsetKey(sect), stage.Offset.ToString());
-                ini_helper_.Set(TimecodeKey(sect), stage.Timecode);
-                ++n;
+                settings.SaveTo(block.Storage);
             }
-        }
-        private void SaveData()
-        {
-            if (block.CustomData.Length > 0 && !ini_helper_.TryParse(block.CustomData))
-            {
-                var msg = $"Custom data of {block.CustomName} is incorrectly formatted";
-                Log.Error($"Failed to save block data: {msg}", msg);
-                return;
-            }
-            SaveToIni();
             
-            block.CustomData = ini_helper_.ToString();
         }
 
 
@@ -292,11 +262,10 @@ namespace Natomic.AngledLCDs
 
                     block.PositionComp.SetLocalMatrix(ref subpartLocalMatrix);
 
-                    if (block is IMyFunctionalBlock b) // This is hacky af but turning it off and on again updates it apparently
-                    {
-                        b.Enabled = false;
-                        b.Enabled = true;
-                    }
+                    // This is hacky af but turning it off and on again updates it apparently
+                    block.Enabled = false;
+                    block.Enabled = true;
+
                     positionUnchanged = true;
                 }
 

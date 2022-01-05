@@ -67,6 +67,11 @@ the Custom Data, else you'll get a bunch of errors. Check out the "Compatibility
 with other scripts" section
 [here](https://steamcommunity.com/sharedfiles/filedetails/?id=407158161)
 
+
+### Known conflicts with other mods
+
+- [Fast Artificial Horizon 30 FPS!](https://steamcommunity.com/workshop/filedetails/?id=2217821984)
+
 ## License/Reuploading 
 
 Parts of this mod are not my own work and I cannot and do not relicense them.

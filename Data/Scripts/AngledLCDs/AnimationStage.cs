@@ -14,16 +14,46 @@ namespace Natomic.AngledLCDs
         public float RollDegs = 0f;
         public uint Timecode = 0;
         private Vector3D offset_ = Vector3D.Zero;
-        public double X { set => offset_.X = value; get => offset_.X; }
-        public double Y { set => offset_.Y = value; get => offset_.Y; }
-        public double Z {
-            set => offset_.Z = value; get => offset_.Z;
+        public double X
+        {
+            set { offset_.X = value; }
+            get
+            {
+                return offset_.X;
+            }
+        }
+        public double Y
+        {
+            set { offset_.Y = value; }
+            get
+            {
+                return offset_.Y;
+            }
+        }
+        public double Z
+        {
+            set
+            {
+                offset_.Z = value;
+            }
+
+            get
+            {
+                return offset_.Z;
+            }
         }
         public float ForwardOffset => (float)X;
         public float LeftOffset => (float)Y;
         public float UpOffset => (float)Z;
-        public Vector3D Offset { set => offset_ = value; get => offset_; }
-        
+        public Vector3D Offset
+        {
+            set { offset_ = value; }
+            get
+            {
+                return offset_;
+            }
+        }
+
 
 
         private static void OriginRotate(ref Matrix by, Vector3D origin, Matrix translation)
