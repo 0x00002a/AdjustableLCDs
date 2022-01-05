@@ -43,7 +43,7 @@ namespace Natomic.AngledLCDs
         private static MyIniKey PitchKey(string sec) => new MyIniKey(sec, "pitch");
         private static MyIniKey RollKey(string sec) => new MyIniKey(sec, "roll");
         private static MyIniKey OffsetKey(string sec) => new MyIniKey(sec, "offset");
-        private static MyIniKey TimecodeKey(string sec) => new MyIniKey(sec, "timecode");
+        private static MyIniKey NameKey(string sec) => new MyIniKey(sec, "name");
         private static string CreateStageSectName(int num) => AnimationStage.SectionName + ":" + num.ToString();
 
         public static LCDSettings LoadFrom(MyModStorageComponentBase store)
@@ -77,7 +77,7 @@ namespace Natomic.AngledLCDs
                 store.Set(PitchKey(sect), stage.PitchDegs);
                 store.Set(RollKey(sect), stage.RollDegs);
                 store.Set(OffsetKey(sect), stage.Offset.ToString());
-                store.Set(TimecodeKey(sect), stage.Timecode);
+                store.Set(NameKey(sect), stage.Name);
                 ++n;
             }
             store.AddSection(INI_SEC_NAME);
@@ -101,7 +101,7 @@ namespace Natomic.AngledLCDs
                     AzimuthDegs = (float)store.Get(AzimuthKey(section)).ToDouble(),
                     PitchDegs = (float)store.Get(PitchKey(section)).ToDouble(),
                     RollDegs = (float)store.Get(RollKey(section)).ToDouble(),
-                    Timecode =store.Get(TimecodeKey(section)).ToUInt32(),
+                    Name = store.Get(NameKey(section)).ToString(),
                 };
 
                 Vector3D offset;
