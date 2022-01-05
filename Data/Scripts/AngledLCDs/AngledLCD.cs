@@ -201,6 +201,7 @@ namespace Natomic.AngledLCDs
             TerminalHelper.AddTermBtn<T>("anistage_add_btn", "Add stage", "Add saved stage", lcd => {
                 lcd.settings.Stages.Add(new AnimationStage { Name = lcd.stageNameStr.ToString() });
                 lcd.stageNameStr.Clear();
+                lcd.SaveData();
             });
 
             TerminalHelper.AddTermListSel<T>("aniframes_sel", "Stages", "Stages optionally used for animations", (b, content, sel) =>
@@ -229,6 +230,7 @@ namespace Natomic.AngledLCDs
                     lcd.settings.Stages.RemoveAll(s => lcd.selectedStages.Contains(s));
                 }
                 lcd.selectedStages.Clear();
+                lcd.SaveData();
             });
 
             use_modded_chbox = TerminalHelper.AddTermChbox<T>("modstore_chbox", "Use mod storage", "Untick to select custom data, it persists even when the mod isn't loaded but may cause conflicts with some scripts", (b, v) => b.UseModStorage = v, b => b.UseModStorage);
