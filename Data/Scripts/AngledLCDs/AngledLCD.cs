@@ -201,16 +201,17 @@ namespace Natomic.AngledLCDs
 
 
             TerminalHelper.AddTermTxtbox<T>("anistagename_ent", "Stage name", "Name for new stage", (b, v) => b.stageNameStr = v, b => b.stageNameStr);
-            TerminalHelper.AddTermBtn<T>("anistage_add_btn", "Add stage", "Add saved stage", lcd => {
-                lcd.settings.Stages.Add(new AnimationStage { Name = lcd.stageNameStr.ToString() });
-                lcd.stageNameStr.Clear();
-                lcd.SaveData();
-            });
+            TerminalHelper.AddTermBtn<T>("anistage_add_btn", "Add stage", "Add saved stage", lcd => lcd.AddStage());
+                
 
             TerminalHelper.AddTermListSel<T>("aniframes_sel", "Stages", "Stages optionally used for animations", (b, content, sel) =>
             {
                 foreach (var stage in b.settings.Stages)
                 {
+                    if (stage.Name.Length == 0)
+                    {
+                        continue;
+                    }
                     var item = new MyTerminalControlListBoxItem(MyStringId.GetOrCompute(stage.Name), MyStringId.GetOrCompute(stage.Name), stage);
                     content.Add(item);
                     if (b.selectedStages.Contains(stage))
@@ -282,6 +283,18 @@ namespace Natomic.AngledLCDs
             }, 5, false);
             TerminalHelper.AddTermBtn<T>("anistep_rm_btn", "Remove step", "Removes selected step", lcd => lcd.RemoveCurrAnimation());
             TerminalHelper.AddTermBtn<T>("anistart_btn", "Start animation", "Starts the selected animation", lcd => lcd.StartAnimation());
+        }
+        private void AddStage()
+        {
+            if (settings.Stages.Count == 1 && settings.Stages[0].Name == "") // Special case: first stage added for this
+            {
+                settings.Stages[0].Name = stageNameStr.ToString();
+            } else
+            {
+                settings.Stages.Add(new AnimationStage { Name = stageNameStr.ToString() });
+            }
+            stageNameStr.Clear();
+            SaveData();
         }
         private void RemoveCurrAnimation()
         {
