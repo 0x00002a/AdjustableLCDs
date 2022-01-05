@@ -18,7 +18,7 @@ namespace Natomic.AngledLCDs
         [ProtoMember(3)]
         public float RollDegs = 0f;
         [ProtoMember(4)]
-        public uint Timecode = 0;
+        public string Name = String.Empty;
         [ProtoMember(5)]
         private Vector3D offset_ = Vector3D.Zero;
         public double X
@@ -88,15 +88,15 @@ namespace Natomic.AngledLCDs
             subpartLocalMatrix = Matrix.Normalize(subpartLocalMatrix);
             return subpartLocalMatrix;
         }
-        public Matrix TargetLocationAtTimecode(Matrix origin, Matrix from, uint start, uint code)
+        public Matrix TargetLocationAtTimecode(Matrix origin, Matrix from, AnimationStep step, uint code)
         {
-            if (code > Timecode)
+            if (code > step.Ticks)
             {
-                throw new ArgumentException($"timecode exceeds animation stage timecode: {code} > {Timecode}");
+                throw new ArgumentException($"timecode exceeds animation stage timecode: {code} > {step.Ticks}");
             }
             var target = TargetLocation(origin);
             var translation = target - from;
-            var scale = Timecode - start;
+            var scale = step.Ticks;
             var scaling = code / (float)scale;
             return from + translation * scaling;
         }

@@ -24,7 +24,7 @@ namespace Natomic.AngledLCDs
             box.Tooltip = MyStringId.GetOrCompute(tooltip);
             box.SupportsMultipleBlocks = false;
             box.VisibleRowsCount = visibleRows;
-            box.Multiselect = false;
+            box.Multiselect = true;
             box.ListContent = (b, content, sel) =>
             {
                 var lcd = b.GameLogic.GetAs<AngledLCD<T>>();
