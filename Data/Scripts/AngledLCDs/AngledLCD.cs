@@ -304,6 +304,7 @@ namespace Natomic.AngledLCDs
                     settings.Steps.Add(new LCDSettings.AnimationChain { Steps = steps });
                     selectedStages.Clear();
                     TerminalHelper.RefreshAll();
+                    SaveData();
                 }
             }
             catch (Exception e)
