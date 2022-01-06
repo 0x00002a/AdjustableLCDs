@@ -21,6 +21,10 @@ namespace Natomic.AngledLCDs
         public string Name = String.Empty;
         [ProtoMember(5)]
         private Vector3D offset_ = Vector3D.Zero;
+        [ProtoMember(6)]
+        public bool RelativeTransformMode = false;
+        [ProtoMember(7)]
+        public Vector3 RotationOriginOffset = Vector3.Zero;
         public double X
         {
             set { offset_.X = value; }
@@ -77,9 +81,9 @@ namespace Natomic.AngledLCDs
             var subpartLocalMatrix = origin;
             var localForward = origin.Right;
 
-            var angle_transform = Matrix.CreateFromAxisAngle(localForward, MathHelper.ToRadians(PitchDegs))
-                                * Matrix.CreateFromAxisAngle(origin.Up, MathHelper.ToRadians(AzimuthDegs))
-                                * Matrix.CreateFromAxisAngle(origin.Forward, MathHelper.ToRadians(RollDegs));
+            var angle_transform = Matrix.CreateFromAxisAngle(localForward + RotationOriginOffset.X, MathHelper.ToRadians(PitchDegs))
+                                * Matrix.CreateFromAxisAngle(origin.Up + RotationOriginOffset.Z, MathHelper.ToRadians(AzimuthDegs))
+                                * Matrix.CreateFromAxisAngle(origin.Forward + RotationOriginOffset.Y, MathHelper.ToRadians(RollDegs));
             OriginRotate(ref subpartLocalMatrix, subpartLocalMatrix.Translation, angle_transform);
             subpartLocalMatrix *= Matrix.CreateTranslation((Vector3D)subpartLocalMatrix.Forward * offset_.X);
             subpartLocalMatrix *= Matrix.CreateTranslation((Vector3D)subpartLocalMatrix.Left * LeftOffset);

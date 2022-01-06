@@ -83,6 +83,7 @@ namespace Natomic.AngledLCDs
                 return useModStorage;
             }
         }
+        private bool RelativeTransformMode => current_stage_.RelativeTransformMode;
 
         public float RollDegs
         {
@@ -303,6 +304,16 @@ namespace Natomic.AngledLCDs
             CtrlReqMStore(
                 AddEnabled(lcd => lcd != null && lcd.currentAnimation != null, 
             TerminalHelper.AddTermBtn<T>("anistart_btn", "Start animation", "Starts the selected animation", lcd => lcd.StartAnimation())));
+        }
+        private static IMyTerminalControl AddVisible(Func<AngledLCD<T>, bool> enable, IMyTerminalControl ctrl)
+        {
+            var savedVis = (Func<IMyTerminalBlock, bool>)ctrl.Visible.Clone();
+            ctrl.Enabled = b =>
+            {
+                return savedVis(b) && enable(b.GameLogic.GetAs<AngledLCD<T>>());
+            };
+            return ctrl;
+
         }
         private static IMyTerminalControl AddEnabled(Func<AngledLCD<T>, bool> enable, IMyTerminalControl ctrl)
         {
