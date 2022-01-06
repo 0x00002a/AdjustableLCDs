@@ -61,6 +61,14 @@ namespace Natomic.AngledLCDs
 
         private readonly List<string> sections_cache = new List<string>();
 
+        private bool CustomRotOrigin
+        {
+            get
+            {
+                return current_stage_.CustomRotOrigin;
+            } set { current_stage_.CustomRotOrigin = value;  }
+        }
+
         private bool UseModStorage
         {
             set
@@ -234,6 +242,21 @@ namespace Natomic.AngledLCDs
             TerminalHelper.AddTermSlider<T>("xffs_slider", "Z Offset", "-10 to 10, forward offset", -10, 10, (b, v) => b.ForwardOffset = v, b => b.ForwardOffset);
             TerminalHelper.AddTermSlider<T>("zffs_slider", "X Offset", "-10 to 10, left offset", -10, 10, (b, v) => b.LeftOffset = v, b => b.LeftOffset);
             TerminalHelper.AddTermSlider<T>("yffs_slider", "Y Offset", "-10 to 10, up offset", -10, 10, (b, v) => b.UpOffset = v, b => b.UpOffset);
+
+            TerminalHelper.AddTermChbox<T>("custom_rot_orig_chbox", "Custom rotation origin", "Enable setting a custom origin to apply rotations relative to", (lcd, v) => lcd.CustomRotOrigin = v, lcd => lcd.CustomRotOrigin);
+            AddEnabled(lcd => lcd != null && lcd.CustomRotOrigin,
+                TerminalHelper.AddTermChbox<T>("relative_offset_chbox", "Lock to offset", "Lock the rotation origin to the xyz offset", (lcd, v) => lcd.current_stage_.RelativeTransformMode = v, lcd => lcd.RelativeTransformMode)
+                );
+            Func<AngledLCD<T>, bool> visCheckForRel = lcd => lcd != null && lcd.RelativeTransformMode;
+            AddVisible(visCheckForRel, 
+            TerminalHelper.AddTermSlider<T>("rot_xffs_slider", "Z", "-10 to 10, forward offset", -10, 10, (b, v) => b.current_stage_.RotationOriginOffset.Z = v, b => b.current_stage_.RotationOriginOffset.Z)
+            );
+            AddVisible(visCheckForRel,
+                TerminalHelper.AddTermSlider<T>("rot_zffs_slider", "X", "-10 to 10, left offset", -10, 10, (b, v) => b.current_stage_.RotationOriginOffset.X = v, b => b.current_stage_.RotationOriginOffset.X)
+                );
+            AddVisible(visCheckForRel,
+                TerminalHelper.AddTermSlider<T>("rot_yffs_slider", "Y", "-10 to 10, up offset", -10, 10, (b, v) => b.current_stage_.RotationOriginOffset.Y = v, b => b.current_stage_.RotationOriginOffset.Y)
+                );
 
 
             TerminalHelper.AddTermTxtbox<T>("anistagename_ent", "Stage name", "Name for new stage", (b, v) => b.stageNameStr = v, b => b.stageNameStr);

@@ -144,7 +144,7 @@ namespace Natomic.AngledLCDs
             MyAPIGateway.TerminalControls.AddControl<T>(txtbox);
             return txtbox;
         }
-        public static void AddTermSlider<T>(string name, string title, string tooltip, int lower, int upper, Action<AngledLCD<T>, float> set, Func<AngledLCD<T>, float> get)
+        public static IMyTerminalControlSlider AddTermSlider<T>(string name, string title, string tooltip, int lower, int upper, Action<AngledLCD<T>, float> set, Func<AngledLCD<T>, float> get)
             where T: IMyFunctionalBlock
         {
             var slider = MyAPIGateway.TerminalControls.CreateControl<IMyTerminalControlSlider, T>(name);
@@ -191,6 +191,7 @@ namespace Natomic.AngledLCDs
             };
             controls_.Add(slider);
             MyAPIGateway.TerminalControls.AddControl<T>(slider);
+            return slider;
         }
     }
 }
