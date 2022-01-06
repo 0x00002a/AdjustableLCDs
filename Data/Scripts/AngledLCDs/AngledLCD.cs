@@ -66,7 +66,7 @@ namespace Natomic.AngledLCDs
             get
             {
                 return current_stage_.CustomRotOrigin;
-            } set { current_stage_.CustomRotOrigin = value;  }
+            } set { current_stage_.CustomRotOrigin = value; TerminalHelper.RefreshAll(); positionUnchanged = false; }
         }
 
         private bool UseModStorage
@@ -91,7 +91,18 @@ namespace Natomic.AngledLCDs
                 return useModStorage;
             }
         }
-        private bool RelativeTransformMode => current_stage_.RelativeTransformMode;
+        private bool RelativeTransformMode
+        {
+            get
+            {
+                return current_stage_.RelativeTransformMode;
+            } set
+            {
+                current_stage_.RelativeTransformMode = value;
+                TerminalHelper.RefreshAll();
+                positionUnchanged = false;
+            }
+        }
 
         public float RollDegs
         {
@@ -120,6 +131,42 @@ namespace Natomic.AngledLCDs
                 positionUnchanged = false;
             }
             get { return current_stage_.PitchDegs; }
+        }
+        public float ForwardRotOrigin
+        {
+            set
+            {
+                current_stage_.RotationOriginOffset.X = value;
+                positionUnchanged = false;
+            }
+            get
+            {
+                return current_stage_.RotationOriginOffset.X;
+            }
+        }
+        public float LeftRotOrigin
+        {
+            set
+            {
+                current_stage_.RotationOriginOffset.Y = value;
+                positionUnchanged = false;
+            }
+            get
+            {
+                return current_stage_.RotationOriginOffset.Y;
+            }
+        }
+        public float UpRotOrigin
+        {
+            set
+            {
+                current_stage_.RotationOriginOffset.Z = value;
+                positionUnchanged = false;
+            }
+            get
+            {
+                return current_stage_.RotationOriginOffset.Z;
+            }
         }
         public float ForwardOffset
         {
@@ -245,17 +292,17 @@ namespace Natomic.AngledLCDs
 
             TerminalHelper.AddTermChbox<T>("custom_rot_orig_chbox", "Custom rotation origin", "Enable setting a custom origin to apply rotations relative to", (lcd, v) => lcd.CustomRotOrigin = v, lcd => lcd.CustomRotOrigin);
             AddEnabled(lcd => lcd != null && lcd.CustomRotOrigin,
-                TerminalHelper.AddTermChbox<T>("relative_offset_chbox", "Lock to offset", "Lock the rotation origin to the xyz offset", (lcd, v) => lcd.current_stage_.RelativeTransformMode = v, lcd => lcd.RelativeTransformMode)
+                TerminalHelper.AddTermChbox<T>("relative_offset_chbox", "Lock to offset", "Lock the rotation origin to the xyz offset", (lcd, v) => lcd.RelativeTransformMode = v, lcd => lcd.RelativeTransformMode)
                 );
-            Func<AngledLCD<T>, bool> visCheckForRel = lcd => lcd != null && lcd.RelativeTransformMode;
+            Func<AngledLCD<T>, bool> visCheckForRel = lcd => lcd != null && lcd.CustomRotOrigin;
             AddVisible(visCheckForRel, 
-            TerminalHelper.AddTermSlider<T>("rot_xffs_slider", "Z", "-10 to 10, forward offset", -10, 10, (b, v) => b.current_stage_.RotationOriginOffset.Z = v, b => b.current_stage_.RotationOriginOffset.Z)
+            TerminalHelper.AddTermSlider<T>("rot_xffs_slider", "Z", "-10 to 10, forward offset", -10, 10, (b, v) => b.ForwardRotOrigin = v, b => b.ForwardRotOrigin)
             );
             AddVisible(visCheckForRel,
-                TerminalHelper.AddTermSlider<T>("rot_zffs_slider", "X", "-10 to 10, left offset", -10, 10, (b, v) => b.current_stage_.RotationOriginOffset.X = v, b => b.current_stage_.RotationOriginOffset.X)
+                TerminalHelper.AddTermSlider<T>("rot_zffs_slider", "X", "-10 to 10, left offset", -10, 10, (b, v) => b.LeftRotOrigin = v, b => b.LeftRotOrigin)
                 );
             AddVisible(visCheckForRel,
-                TerminalHelper.AddTermSlider<T>("rot_yffs_slider", "Y", "-10 to 10, up offset", -10, 10, (b, v) => b.current_stage_.RotationOriginOffset.Y = v, b => b.current_stage_.RotationOriginOffset.Y)
+                TerminalHelper.AddTermSlider<T>("rot_yffs_slider", "Y", "-10 to 10, up offset", -10, 10, (b, v) => b.UpRotOrigin = v, b => b.UpRotOrigin)
                 );
 
 
