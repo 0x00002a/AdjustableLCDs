@@ -278,7 +278,7 @@ namespace Natomic.AngledLCDs
             TerminalHelper.AddTermSlider<T>("zffs_slider", "X Offset", "-10 to 10, left offset", -10, 10, (b, v) => b.LeftOffset = v, b => b.LeftOffset);
             TerminalHelper.AddTermSlider<T>("yffs_slider", "Y Offset", "-10 to 10, up offset", -10, 10, (b, v) => b.UpOffset = v, b => b.UpOffset);
 
-            TerminalHelper.AddTermChbox<T>("custom_rot_orig_chbox", "Custom rotation origin", "Enable setting a custom origin to apply rotations relative to", (lcd, v) => lcd.CustomRotOrigin = v, lcd => lcd.CustomRotOrigin);
+            TerminalHelper.AddTermChbox<T>("custom_rot_orig_chbox", "Offsets are absolute", "Apply offset transform before rotation, meaning rotation becomes relative to the offset rather than the other way round (default: off)", (lcd, v) => lcd.CustomRotOrigin = v, lcd => lcd.CustomRotOrigin);
             Func<AngledLCD<T>, bool> visCheckForRel = lcd => lcd != null && lcd.CustomRotOrigin;
             AddVisible(visCheckForRel, 
             TerminalHelper.AddTermSlider<T>("rot_xffs_slider", "Z", "-10 to 10, forward offset", -10, 10, (b, v) => b.ForwardRotOrigin = v, b => b.ForwardRotOrigin)
