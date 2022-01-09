@@ -81,10 +81,6 @@ namespace Natomic.AngledLCDs
                 {
                     MigrateToCustomDataStore();
                 }
-                if (value != useModStorage)
-                {
-                    TerminalHelper.RefreshAll();
-                }
             }
             get
             {
@@ -192,6 +188,7 @@ namespace Natomic.AngledLCDs
                 return (float)current_stage_.Z;
             }
         }
+        public bool CanSafelyStoreInCD => settings.Steps.Count == 0 && !CustomRotOrigin;
         private Matrix origin_;
         private readonly MyIni ini_helper_ = new MyIni();
 
@@ -278,8 +275,19 @@ namespace Natomic.AngledLCDs
             TerminalHelper.AddTermSlider<T>("zffs_slider", "Location offset left/right", "Position left/right", -10, 10, (b, v) => b.LeftOffset = v, b => b.LeftOffset);
             TerminalHelper.AddTermSlider<T>("yffs_slider", "Location offset up/down", "Position up/down", -10, 10, (b, v) => b.UpOffset = v, b => b.UpOffset);
 
-            TerminalHelper.AddTermChbox<T>("custom_rot_orig_chbox", "Offsets are absolute", "Apply offset transform before rotation, meaning rotation becomes relative to the offset rather than the other way round (default: off)", (lcd, v) => lcd.CustomRotOrigin = v, lcd => lcd.CustomRotOrigin);
-            Func<AngledLCD<T>, bool> visCheckForRel = lcd => lcd != null && lcd.CustomRotOrigin;
+            AddEnabled(logic => logic != null && (!logic.useModStorage || logic.CanSafelyStoreInCD), 
+                TerminalHelper.AddTermChbox<T>(
+                    "modstore_chbox", 
+                    "Use mod storage", "Untick to select custom data, it persists even when the mod isn't loaded but may cause conflicts with some scripts. Most features are disabled without mod storage and it cannot be disabled while these are in use to prevent data loss", 
+                    (b, v) => {
+                        b.UseModStorage = v;
+                        TerminalHelper.RefreshAll();
+                        },
+                    b => b.UseModStorage));
+            Func<AngledLCD<T>, bool> visCheckForRel = lcd => lcd != null && lcd.CustomRotOrigin && lcd.UseModStorage;
+            CtrlReqMStore( 
+                TerminalHelper.AddTermChbox<T>("custom_rot_orig_chbox", "Offsets are absolute", "Apply offset transform before rotation, meaning rotation becomes relative to the offset rather than the other way round (default: off)", (lcd, v) => lcd.CustomRotOrigin = v, lcd => lcd.CustomRotOrigin)
+            );
             AddVisible(visCheckForRel, 
             TerminalHelper.AddTermSlider<T>("rot_xffs_slider", "Pivot offset forward/back", "Offset for the pivot point forward/back. Allows fine turning of where the object rotates around", -10, 10, (b, v) => b.ForwardRotOrigin = v, b => b.ForwardRotOrigin)
             );
@@ -331,7 +339,6 @@ namespace Natomic.AngledLCDs
                 lcd.SaveData();
             }));
 
-            AddEnabled(logic => logic != null && (!logic.useModStorage || logic.settings.Steps.Count == 0), TerminalHelper.AddTermChbox<T>("modstore_chbox", "Use mod storage", "Untick to select custom data, it persists even when the mod isn't loaded but may cause conflicts with some scripts. Most features are disabled without mod storage and toggling it will clear them", (b, v) => b.UseModStorage = v, b => b.UseModStorage));
 
             CtrlReqMStore(TerminalHelper.AddTermTxtbox<T>("anitimeframe_ent", "Animation ticks", "Ticks for the animation to take", (b, v) => b.animationTicksStr = v, b => b.animationTicksStr));
             CtrlReqMStore(
