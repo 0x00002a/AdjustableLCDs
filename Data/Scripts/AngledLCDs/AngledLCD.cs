@@ -274,20 +274,20 @@ namespace Natomic.AngledLCDs
             TerminalHelper.AddTermSlider<T>("zrot_slider", "Pitch", "-180 to 180 in degrees", -180, 180, (b, v) => b.PitchDegs = v, b => b.PitchDegs);
             TerminalHelper.AddTermSlider<T>("xrot_slider", "Yaw", "-180 to 180 in degrees", -180, 180, (b, v) => b.AzimuthDegs = v, b => b.AzimuthDegs);
             TerminalHelper.AddTermSlider<T>("yrot_slider", "Roll", "-180 to 180 in degrees", -180, 180, (b, v) => b.RollDegs = v, b => b.RollDegs);
-            TerminalHelper.AddTermSlider<T>("xffs_slider", "Z Offset", "-10 to 10, forward offset", -10, 10, (b, v) => b.ForwardOffset = v, b => b.ForwardOffset);
-            TerminalHelper.AddTermSlider<T>("zffs_slider", "X Offset", "-10 to 10, left offset", -10, 10, (b, v) => b.LeftOffset = v, b => b.LeftOffset);
-            TerminalHelper.AddTermSlider<T>("yffs_slider", "Y Offset", "-10 to 10, up offset", -10, 10, (b, v) => b.UpOffset = v, b => b.UpOffset);
+            TerminalHelper.AddTermSlider<T>("xffs_slider", "Location offset forward/back", "Position forward/back", -10, 10, (b, v) => b.ForwardOffset = v, b => b.ForwardOffset);
+            TerminalHelper.AddTermSlider<T>("zffs_slider", "Location offset left/right", "Position left/right", -10, 10, (b, v) => b.LeftOffset = v, b => b.LeftOffset);
+            TerminalHelper.AddTermSlider<T>("yffs_slider", "Location offset up/down", "Position up/down", -10, 10, (b, v) => b.UpOffset = v, b => b.UpOffset);
 
             TerminalHelper.AddTermChbox<T>("custom_rot_orig_chbox", "Offsets are absolute", "Apply offset transform before rotation, meaning rotation becomes relative to the offset rather than the other way round (default: off)", (lcd, v) => lcd.CustomRotOrigin = v, lcd => lcd.CustomRotOrigin);
             Func<AngledLCD<T>, bool> visCheckForRel = lcd => lcd != null && lcd.CustomRotOrigin;
             AddVisible(visCheckForRel, 
-            TerminalHelper.AddTermSlider<T>("rot_xffs_slider", "Z", "-10 to 10, forward offset", -10, 10, (b, v) => b.ForwardRotOrigin = v, b => b.ForwardRotOrigin)
+            TerminalHelper.AddTermSlider<T>("rot_xffs_slider", "Pivot offset forward/back", "Offset for the pivot point forward/back. Allows fine turning of where the object rotates around", -10, 10, (b, v) => b.ForwardRotOrigin = v, b => b.ForwardRotOrigin)
             );
             AddVisible(visCheckForRel,
-                TerminalHelper.AddTermSlider<T>("rot_zffs_slider", "X", "-10 to 10, left offset", -10, 10, (b, v) => b.LeftRotOrigin = v, b => b.LeftRotOrigin)
+                TerminalHelper.AddTermSlider<T>("rot_zffs_slider", "Pivot offset left/right", "Offset for the pivot point left/right. Allows fine turning of where the object rotates around", -10, 10, (b, v) => b.LeftRotOrigin = v, b => b.LeftRotOrigin)
                 );
             AddVisible(visCheckForRel,
-                TerminalHelper.AddTermSlider<T>("rot_yffs_slider", "Y", "-10 to 10, up offset", -10, 10, (b, v) => b.UpRotOrigin = v, b => b.UpRotOrigin)
+                TerminalHelper.AddTermSlider<T>("rot_yffs_slider", "Pivot offset up/down", "Offset for the pivot point up/down. Allows fine turning of where the object rotates around", -10, 10, (b, v) => b.UpRotOrigin = v, b => b.UpRotOrigin)
                 );
 
 
@@ -331,7 +331,7 @@ namespace Natomic.AngledLCDs
                 lcd.SaveData();
             }));
 
-            AddEnabled(logic => logic != null && (!logic.useModStorage || logic.settings.Steps.Count == 0), TerminalHelper.AddTermChbox<T>("modstore_chbox", "Use mod storage", "Untick to select custom data, it persists even when the mod isn't loaded but may cause conflicts with some scripts", (b, v) => b.UseModStorage = v, b => b.UseModStorage));
+            AddEnabled(logic => logic != null && (!logic.useModStorage || logic.settings.Steps.Count == 0), TerminalHelper.AddTermChbox<T>("modstore_chbox", "Use mod storage", "Untick to select custom data, it persists even when the mod isn't loaded but may cause conflicts with some scripts. Most features are disabled without mod storage and toggling it will clear them", (b, v) => b.UseModStorage = v, b => b.UseModStorage));
 
             CtrlReqMStore(TerminalHelper.AddTermTxtbox<T>("anitimeframe_ent", "Animation ticks", "Ticks for the animation to take", (b, v) => b.animationTicksStr = v, b => b.animationTicksStr));
             CtrlReqMStore(
