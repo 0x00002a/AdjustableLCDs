@@ -8,7 +8,7 @@ This mod adds controls to LCDs allowing you to adjust position and rotation.
 Rotors and subgrids are a pain right? I think we can all agree that needing a
 stack of subgrids, just for your cool bridge or sexy fighter cockpit, is both
 clangy and annoying (no projector subgrids anyone?). Well fear not brave
-engineer, for do I have the product for you. This ~~reasonably priced~~ mod will
+engineer, for do I have the product for you. This ~~reasonably priced~~ free mod will
 allow you to relocate your LCDs to your hearts content\*.
 
 \* Hitboxes do not change. I am not responsible for any injury caused due to
@@ -27,11 +27,18 @@ adjustable properties is:
 - Y offset
 - X offset
 
+There is also the ability to save variouse states of transformation, and support for
+moving from one to another over time (animation).
+
+Location can be either relative to rotation (rotations will be applied relative to the origional location), 
+or absolute (rotations will be applied relative to the offset location). Plus the offset for rotation can be
+changed, letting you pivot an lcd from the center, bottom, etc.
+
 Other features:
 
 - Persistence including through saves without the mod installed (spawning a ship
   without the mod installed then saving it will not wipe the configuration of
-  any existing LCDs)
+  any existing LCDs). This is now a legacy feature and most new features won't work with it
 
 
 ### Disclaimer
@@ -56,16 +63,12 @@ block in such ways as to shatter the illusion but you have been warned.
 
 ## Conflicts with PB scripts 
 
-This mod _should not_ conflict with any PB script which uses the MyIni format
-for the Custom Data. Most popular scripts nowadays do support this format but
-may require additional configuration (Automatic LCDs 2 for example).  This mod
-is not an never will be compatible with any scripts which do not use this
-format. 
-
-Note that in the case of Automatic LCDs 2, you _must_ set up the terminator in
-the Custom Data, else you'll get a bunch of errors. Check out the "Compatibility
-with other scripts" section
-[here](https://steamcommunity.com/sharedfiles/filedetails/?id=407158161)
+This mod now stores its data in the mod storage of the lcd block by default,
+so it should be compatable with any lcd scripts out there. There is still
+an option to use the custom data storage but doing so may break scripts
+like automatic lcds 2. If you really really want to use the custom data
+then check out the "Compatibility with other scripts" section
+[here](https://steamcommunity.com/sharedfiles/filedetails/?id=407158161).
 
 
 ### Known conflicts with other mods

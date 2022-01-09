@@ -340,7 +340,7 @@ namespace Natomic.AngledLCDs
             }));
 
 
-            CtrlReqMStore(TerminalHelper.AddTermTxtbox<T>("anitimeframe_ent", "Animation ticks", "Ticks for the animation to take", (b, v) => b.animationTicksStr = v, b => b.animationTicksStr));
+            CtrlReqMStore(TerminalHelper.AddTermTxtbox<T>("anitimeframe_ent", "Animation ticks", "Ticks for the animation to take. Comma seperated with no spaces, if there are less values than the number of selected stages the last value is used for the remaining transitions. 60 ticks is one second", (b, v) => b.animationTicksStr = v, b => b.animationTicksStr));
             CtrlReqMStore(
                 AddEnabled(lcd => lcd != null && lcd.selectedStages.Count > 1,
                 TerminalHelper.AddTermBtn<T>("anistep_add", "Add step", "Add animation step", lcd => lcd.AddAnimationStep())));
