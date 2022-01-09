@@ -91,18 +91,6 @@ namespace Natomic.AngledLCDs
                 return useModStorage;
             }
         }
-        private bool RelativeTransformMode
-        {
-            get
-            {
-                return current_stage_.RelativeTransformMode;
-            } set
-            {
-                current_stage_.RelativeTransformMode = value;
-                TerminalHelper.RefreshAll();
-                positionUnchanged = false;
-            }
-        }
 
         public float RollDegs
         {
@@ -291,9 +279,6 @@ namespace Natomic.AngledLCDs
             TerminalHelper.AddTermSlider<T>("yffs_slider", "Y Offset", "-10 to 10, up offset", -10, 10, (b, v) => b.UpOffset = v, b => b.UpOffset);
 
             TerminalHelper.AddTermChbox<T>("custom_rot_orig_chbox", "Custom rotation origin", "Enable setting a custom origin to apply rotations relative to", (lcd, v) => lcd.CustomRotOrigin = v, lcd => lcd.CustomRotOrigin);
-            AddEnabled(lcd => lcd != null && lcd.CustomRotOrigin,
-                TerminalHelper.AddTermChbox<T>("relative_offset_chbox", "Lock to offset", "Lock the rotation origin to the xyz offset", (lcd, v) => lcd.RelativeTransformMode = v, lcd => lcd.RelativeTransformMode)
-                );
             Func<AngledLCD<T>, bool> visCheckForRel = lcd => lcd != null && lcd.CustomRotOrigin;
             AddVisible(visCheckForRel, 
             TerminalHelper.AddTermSlider<T>("rot_xffs_slider", "Z", "-10 to 10, forward offset", -10, 10, (b, v) => b.ForwardRotOrigin = v, b => b.ForwardRotOrigin)
@@ -540,6 +525,11 @@ namespace Natomic.AngledLCDs
             catch (Exception e)
             {
                 ReportErr("Failed to load config", e);
+                if (settings == null)
+                {
+                    settings = new LCDSettings();
+                    UseModStorage = true;
+                }
             }
 
         }
