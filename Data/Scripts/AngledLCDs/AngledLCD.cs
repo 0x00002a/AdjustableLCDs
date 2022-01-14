@@ -216,7 +216,7 @@ namespace Natomic.AngledLCDs
                 return (float)current_stage_.Z;
             }
         }
-        public bool CanSafelyStoreInCD => settings.Steps.Count == 0 && !CustomRotOrigin;
+        public bool CanSafelyStoreInCD => settings.Steps.Count == 0 && !CustomRotOrigin && settings.Stages.Count == 1;
         private Matrix origin_;
         private readonly MyIni ini_helper_ = new MyIni();
 
@@ -328,7 +328,10 @@ namespace Natomic.AngledLCDs
 
 
             TerminalHelper.AddTermTxtbox<T>("anistagename_ent", "Stage name", "Name for new stage", (b, v) => b.stageNameStr = v, b => b.stageNameStr);
-            TerminalHelper.AddTermBtn<T>("anistage_add_btn", "Add stage", "Add saved stage", lcd => lcd.AddStage());
+            AddEnabled(
+                lcd => lcd != null && lcd.UseModStorage,
+                TerminalHelper.AddTermBtn<T>("anistage_add_btn", "Add stage", "Add saved stage", lcd => lcd.AddStage())
+                );
 
 
             TerminalHelper.AddTermListSel<T>("aniframes_sel", "Stages", "Stages optionally used for animations", (b, content, sel) =>
