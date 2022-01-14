@@ -28,11 +28,10 @@ adjustable properties is:
 - X offset
 
 There is also the ability to save variouse states of transformation, and support for
-moving from one to another over time (animation).
+moving from one to another over time (animation). See the video for a guide on that
 
 Location can be either relative to rotation (rotations will be applied relative to the origional location), 
-or absolute (rotations will be applied relative to the offset location). Plus the offset for rotation can be
-changed, letting you pivot an lcd from the center, bottom, etc.
+or absolute (rotations will be applied relative to the offset location).
 
 Other features:
 
