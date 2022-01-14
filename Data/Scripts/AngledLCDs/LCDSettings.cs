@@ -42,7 +42,7 @@ namespace Natomic.AngledLCDs
         };
         private List<AnimationStage> stages_cache_;
         private List<AnimationChain> steps_cache_;
-        [ProtoMember(1)]
+        [ProtoMember(2)]
         public List<AnimationStage> Stages { get
             {
                 if (stages_cache_ == null)
@@ -52,7 +52,7 @@ namespace Natomic.AngledLCDs
                 return stages_cache_;
             } set { stages_cache_ = value; }
         }
-        [ProtoMember(2)]
+        [ProtoMember(3)]
         public List<AnimationChain> Steps { get
             {
                 if (steps_cache_ == null)
@@ -62,6 +62,11 @@ namespace Natomic.AngledLCDs
                 return steps_cache_;
             } set { steps_cache_ = value; }
         }
+        [ProtoMember(4)]
+        public int ActiveStage = 0;
+
+        [ProtoMember(5)]
+        public int SelectedStep = 0;
 
         public static readonly Guid modStorageId = Guid.Parse("16f75c87-ba3d-4125-85e6-86620aea4b93");
         public const string INI_SEC_NAME = "AngledLCDs Save Data";

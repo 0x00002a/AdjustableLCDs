@@ -68,6 +68,34 @@ namespace Natomic.AngledLCDs
                 return current_stage_.CustomRotOrigin;
             } set { current_stage_.CustomRotOrigin = value; TerminalHelper.RefreshAll(); positionUnchanged = false; }
         }
+        private AnimationStage CurrentStage
+        {
+            set
+            {
+                settings.ActiveStage = settings.Stages.IndexOf(value);
+                current_stage_ = value;
+            }
+            get
+            {
+                return current_stage_;
+            }
+        }
+        private LCDSettings.AnimationChain CurrentAnimation
+        {
+            set
+            {
+                settings.SelectedStep = settings.Steps.IndexOf(value);
+                currentAnimation = value;
+            }
+            get
+            {
+                if (currentAnimation == null && settings.SelectedStep < settings.Steps.Count)
+                {
+                    currentAnimation = settings.Steps[settings.SelectedStep];
+                }
+                return currentAnimation;
+            }
+        }
 
         private bool UseModStorage
         {
@@ -321,7 +349,7 @@ namespace Natomic.AngledLCDs
 
             }, (b, items) =>
             {
-                b.current_stage_ = (AnimationStage)items[0].UserData;
+                b.CurrentStage = (AnimationStage)items[0].UserData;
                 b.positionUnchanged = false;
                 b.selectedStages.Clear();
                 b.selectedStages.AddRange(items.Select(item => (AnimationStage)item.UserData));
@@ -335,6 +363,10 @@ namespace Natomic.AngledLCDs
                     lcd.settings.Stages.RemoveAll(s => lcd.selectedStages.Contains(s));
                 }
                 lcd.selectedStages.Clear();
+                if (!lcd.settings.Stages.Contains(lcd.CurrentStage))
+                {
+                    lcd.CurrentStage = lcd.settings.Stages[0];
+                }
                 TerminalHelper.RefreshAll();
                 lcd.SaveData();
             }));
@@ -350,7 +382,7 @@ namespace Natomic.AngledLCDs
                     {
                         var item = new MyTerminalControlListBoxItem(MyStringId.GetOrCompute(step.ToString()), MyStringId.GetOrCompute(""), step);
                         content.Add(item);
-                        if (step == b.currentAnimation)
+                        if (step == b.CurrentAnimation)
                         {
                             sel.Add(item);
                         }
@@ -358,13 +390,13 @@ namespace Natomic.AngledLCDs
 
                 }, (b, items) =>
                 {
-                    b.currentAnimation = (LCDSettings.AnimationChain)items[0].UserData;
+                    b.CurrentAnimation = (LCDSettings.AnimationChain)items[0].UserData;
                     TerminalHelper.RefreshAll();
                 }, 5, false));
-            CtrlReqMStore(AddEnabled(lcd => lcd != null && lcd.currentAnimation != null,
+            CtrlReqMStore(AddEnabled(lcd => lcd != null && lcd.CurrentAnimation != null,
             TerminalHelper.AddTermBtn<T>("anistep_rm_btn", "Remove step", "Removes selected step", lcd => lcd.RemoveCurrAnimation()))); 
             CtrlReqMStore(
-                AddEnabled(lcd => lcd != null && lcd.currentAnimation != null, 
+                AddEnabled(lcd => lcd != null && lcd.CurrentAnimation != null, 
             TerminalHelper.AddTermBtn<T>("anistart_btn", "Start animation", "Starts the selected animation", lcd => lcd.StartAnimation())));
         }
         private static IMyTerminalControl AddVisible(Func<AngledLCD<T>, bool> enable, IMyTerminalControl ctrl)
@@ -494,7 +526,8 @@ namespace Natomic.AngledLCDs
             {
                 settings.Stages.Add(new AnimationStage());
             }
-            current_stage_ = settings.Stages[0];
+            current_stage_ = settings.Stages[settings.ActiveStage];
+            TerminalHelper.RefreshAll();
         }
         private void ReportErr(string msg, Exception e)
         {
