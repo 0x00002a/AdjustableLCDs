@@ -316,16 +316,6 @@ namespace Natomic.AngledLCDs
             CtrlReqMStore( 
                 TerminalHelper.AddTermChbox<T>("custom_rot_orig_chbox", "Offsets are absolute", "Apply offset transform before rotation, meaning rotation becomes relative to the offset rather than the other way round (default: off)", (lcd, v) => lcd.CustomRotOrigin = v, lcd => lcd.CustomRotOrigin)
             );
-            AddVisible(visCheckForRel, 
-            TerminalHelper.AddTermSlider<T>("rot_xffs_slider", "Pivot offset forward/back", "Offset for the pivot point forward/back. Allows fine turning of where the object rotates around", -10, 10, (b, v) => b.ForwardRotOrigin = v, b => b.ForwardRotOrigin)
-            );
-            AddVisible(visCheckForRel,
-                TerminalHelper.AddTermSlider<T>("rot_zffs_slider", "Pivot offset left/right", "Offset for the pivot point left/right. Allows fine turning of where the object rotates around", -10, 10, (b, v) => b.LeftRotOrigin = v, b => b.LeftRotOrigin)
-                );
-            AddVisible(visCheckForRel,
-                TerminalHelper.AddTermSlider<T>("rot_yffs_slider", "Pivot offset up/down", "Offset for the pivot point up/down. Allows fine turning of where the object rotates around", -10, 10, (b, v) => b.UpRotOrigin = v, b => b.UpRotOrigin)
-                );
-
 
             TerminalHelper.AddTermTxtbox<T>("anistagename_ent", "Stage name", "Name for new stage", (b, v) => b.stageNameStr = v, b => b.stageNameStr);
             AddEnabled(
