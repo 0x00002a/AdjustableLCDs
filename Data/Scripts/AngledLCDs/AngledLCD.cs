@@ -347,7 +347,7 @@ namespace Natomic.AngledLCDs
                 b.selectedStages.Clear();
                 b.selectedStages.AddRange(items.Select(item => (AnimationStage)item.UserData));
                 TerminalHelper.RefreshAll();
-
+                b.SaveData();
             }, 5, true);
             AddEnabled(lcd => lcd != null && (lcd.selectedStages.Count > 0 && lcd.selectedStages.Count < lcd.settings.Stages.Count), TerminalHelper.AddTermBtn<T>("anistage_rm_btn", "Remove stage", "Remove saved stage", lcd =>
             {
@@ -384,6 +384,7 @@ namespace Natomic.AngledLCDs
                 }, (b, items) =>
                 {
                     b.CurrentAnimation = (LCDSettings.AnimationChain)items[0].UserData;
+                    b.SaveData();
                     TerminalHelper.RefreshAll();
                 }, 5, false));
             CtrlReqMStore(AddEnabled(lcd => lcd != null && lcd.CurrentAnimation != null,
