@@ -340,7 +340,7 @@ namespace Natomic.AngledLCDs
             }));
 
 
-            CtrlReqMStore(TerminalHelper.AddTermTxtbox<T>("anitimeframe_ent", "Animation ticks", "Ticks for the animation to take. Comma seperated with no spaces, if there are less values than the number of selected stages the last value is used for the remaining transitions. 60 ticks is one second", (b, v) => b.animationTicksStr = v, b => b.animationTicksStr));
+            CtrlReqMStore(TerminalHelper.AddTermTxtbox<T>("anitimeframe_ent", "Animation ticks", "Ticks for the animation to take. Must be positive. There are 60 ticks in a second", (b, v) => b.animationTicksStr = v, b => b.animationTicksStr));
             CtrlReqMStore(
                 AddEnabled(lcd => lcd != null && lcd.selectedStages.Count > 1,
                 TerminalHelper.AddTermBtn<T>("anistep_add", "Add step", "Add animation step", lcd => lcd.AddAnimationStep())));
@@ -400,22 +400,24 @@ namespace Natomic.AngledLCDs
             try
             {
                 var stages = selectedStages;
-                var timesteps = animationTicksStr.ToString().Split(',');
-                if (stages.Count > 1 && timesteps.Length >= 1)
+                var timestep = -1;
+                int.TryParse(animationTicksStr.ToString(), out timestep);
+                if (timestep < 0)
                 {
-                    var steps = new List<AnimationStep>();
-                    for (var n = 0; n != stages.Count - 1; ++n)
-                    {
-                        var from = stages[n];
-                        var to = stages[n + 1];
-                        var ticks = timesteps.Length < n ? timesteps[n] : timesteps[timesteps.Length - 1];
-                        steps.Add(new AnimationStep { StageFrom = from.Name, StageTo = to.Name, Ticks = uint.Parse(ticks) });
-                    }
-                    settings.Steps.Add(new LCDSettings.AnimationChain { Steps = steps });
-                    selectedStages.Clear();
-                    TerminalHelper.RefreshAll();
-                    SaveData();
+                    Log.Error("timestep is invalid, must be a (positive) number");
+                    return;
                 }
+                var steps = new List<AnimationStep>();
+                for (var n = 0; n != stages.Count - 1; ++n)
+                {
+                    var from = stages[n];
+                    var to = stages[n + 1];
+                    steps.Add(new AnimationStep { StageFrom = from.Name, StageTo = to.Name, Ticks = (uint)timestep });
+                }
+                settings.Steps.Add(new LCDSettings.AnimationChain { Steps = steps });
+                selectedStages.Clear();
+                TerminalHelper.RefreshAll();
+                SaveData();
             }
             catch (Exception e)
             {
@@ -447,6 +449,7 @@ namespace Natomic.AngledLCDs
                 return;
             }
             settings.Steps.Remove(currentAnimation);
+            currentAnimation = null;
             TerminalHelper.RefreshAll();
             SaveData();
         }
