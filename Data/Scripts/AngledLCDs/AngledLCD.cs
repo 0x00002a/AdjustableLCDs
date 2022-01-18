@@ -61,16 +61,8 @@ namespace Natomic.AngledLCDs
         {
             get { return netSettings_.Value; }
             set
-            {
-                if (value == null)
-                {
-                    Log.Error("tried to set settings to null");
-                    netSettings_.Value = new LCDSettings();
-                }
-                else
-                {
-                    netSettings_.Value = value;
-                }
+            { 
+                netSettings_.Value = value;
             }
         }
         private AnimationController animationCtrl;
@@ -94,6 +86,7 @@ namespace Natomic.AngledLCDs
             {
                 Settings.ActiveStage = Settings.Stages.IndexOf(value);
                 current_stage_ = value;
+                netSettings_.Push();
             }
             get
             {
@@ -106,6 +99,7 @@ namespace Natomic.AngledLCDs
             {
                 Settings.SelectedStep = Settings.Steps.IndexOf(value);
                 currentAnimation = value;
+                netSettings_.Push();
             }
             get
             {
@@ -242,7 +236,7 @@ namespace Natomic.AngledLCDs
 
         private void MigrateToModStore()
         {
-            if (useModStorage.Value != true)
+            if (!useModStorage.Value)
             {
                 useModStorage.Value = true;
             }
@@ -258,7 +252,7 @@ namespace Natomic.AngledLCDs
         }
         private void MigrateToCustomDataStore()
         {
-            if (useModStorage.Value != false)
+            if (useModStorage.Value)
             {
                 useModStorage.Value = false;
             }
@@ -553,6 +547,10 @@ namespace Natomic.AngledLCDs
                 {
                     SaveData(false);
                 }
+                else
+                {
+                    OnSettingsUpdatedByNetwork();
+                }
 
                 positionUnchanged = false;
             };
@@ -570,10 +568,7 @@ namespace Natomic.AngledLCDs
 
             NeedsUpdate = MyEntityUpdateEnum.EACH_10TH_FRAME;
             LoadData();
-            if (Settings.Stages.Count == 0)
-            {
-                Settings.Stages.Add(new AnimationStage());
-            }
+            EnsureDefaultStageExists();
 
             current_stage_ = Settings.Stages[Settings.ActiveStage];
             TerminalHelper.RefreshAll();
@@ -590,6 +585,29 @@ namespace Natomic.AngledLCDs
             ini_helper_.GetSections(sections_cache);
             return sections_cache.Any(s => s == LCDSettings.INI_SEC_NAME || s.StartsWith(AnimationStage.SectionName));
         }
+
+        void EnsureDefaultStageExists()
+        {
+            if (Settings.Stages.Count == 0)
+            {
+                Settings.Stages.Add(new AnimationStage());
+            }
+        }
+
+        // Settings have been externally updated so we need to update all cached values
+        private void OnSettingsUpdatedByNetwork() {
+            try
+            {
+                EnsureDefaultStageExists();
+                currentAnimation = null;
+                current_stage_ = Settings.Stages[Settings.ActiveStage];
+            }
+            catch (Exception e)
+            {
+                Log.Error(e);
+            }
+        }
+        
         private void LoadData()
         {
             try
