@@ -528,6 +528,12 @@ namespace Natomic.AngledLCDs
             Log.Error($"{msg} (block: {block.Name}, id: {block.EntityId}) {e.Message}\n{e.StackTrace}");
         }
 
+        private bool CheckShouldLoadFromCD()
+        {
+            sections_cache.Clear();
+            ini_helper_.GetSections(sections_cache);
+            return sections_cache.Any(s => s == LCDSettings.INI_SEC_NAME || s.StartsWith(AnimationStage.SectionName));
+        }
         private void LoadData()
         {
             try
@@ -537,7 +543,7 @@ namespace Natomic.AngledLCDs
                 {
                     var data = block.CustomData;
                     var success = ini_helper_.TryParse(data);
-                    if (success && ini_helper_.ContainsSection(LCDSettings.INI_SEC_NAME))
+                    if (success && CheckShouldLoadFromCD())
                     {
                         settings = LCDSettings.LoadFrom(ini_helper_, sections_cache);
                     }

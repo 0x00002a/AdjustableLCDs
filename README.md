@@ -9,7 +9,8 @@ Rotors and subgrids are a pain right? I think we can all agree that needing a
 stack of subgrids, just for your cool bridge or sexy fighter cockpit, is both
 clangy and annoying (no projector subgrids anyone?). Well fear not brave
 engineer, for do I have the product for you. This ~~reasonably priced~~ free mod will
-allow you to relocate your LCDs to your hearts content\*.
+allow you to relocate your LCDs to your hearts content\*. Plus you can animate
+them, the options are limitless!™
 
 \* Hitboxes do not change. I am not responsible for any injury caused due to
 collisions with invisible blocks
@@ -27,10 +28,10 @@ adjustable properties is:
 - Y offset
 - X offset
 
-There is also the ability to save variouse states of transformation, and support for
+There is also the ability to save various states of transformation, and support for
 moving from one to another over time (animation). See the video for a guide on that
 
-Location can be either relative to rotation (rotations will be applied relative to the origional location), 
+Location can be either relative to rotation (rotations will be applied relative to the original location), 
 or absolute (rotations will be applied relative to the offset location).
 
 Other features:
@@ -63,7 +64,7 @@ block in such ways as to shatter the illusion but you have been warned.
 ## Conflicts with PB scripts 
 
 This mod now stores its data in the mod storage of the lcd block by default,
-so it should be compatable with any lcd scripts out there. There is still
+so it should be compatible with any lcd scripts out there. There is still
 an option to use the custom data storage but doing so may break scripts
 like automatic lcds 2. If you really really want to use the custom data
 then check out the "Compatibility with other scripts" section
