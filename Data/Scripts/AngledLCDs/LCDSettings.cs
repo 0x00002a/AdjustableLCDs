@@ -125,6 +125,10 @@ namespace Natomic.AngledLCDs
         {
             sections_cache = ReloadSectionsCache(store, sections_cache);
             var settings = new LCDSettings();
+            if (sections_cache.Count > 1)
+            {
+                sections_cache.Remove(INI_SEC_NAME);
+            }
             foreach (var section in sections_cache)
             {
                 var animation = new AnimationStage
