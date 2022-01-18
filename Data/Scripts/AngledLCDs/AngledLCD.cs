@@ -334,7 +334,7 @@ namespace Natomic.AngledLCDs
                         b.UseModStorage = v;
                         TerminalHelper.RefreshAll();
                         },
-                    b => b.UseModStorage));
+                    b => b?.UseModStorage ?? false));
             Func<AngledLCD<T>, bool> visCheckForRel = lcd => lcd != null && lcd.CustomRotOrigin && lcd.UseModStorage;
             CtrlReqMStore( 
                 TerminalHelper.AddTermChbox<T>("custom_rot_orig_chbox", "Offsets are absolute", "Apply offset transform before rotation, meaning rotation becomes relative to the offset rather than the other way round (default: off)", (lcd, v) => lcd.CustomRotOrigin = v, lcd => lcd.CustomRotOrigin)
@@ -616,53 +616,38 @@ namespace Natomic.AngledLCDs
         
         private void LoadData()
         {
+            LCDSettings stored = null;
             try
             {
-                LCDSettings stored = null;
-                useModStorage.SetValue(block.Storage?.ContainsKey(LCDSettings.modStorageId) ?? false);
+                var data = block.CustomData;
+                var success = ini_helper_.TryParse(data);
+                useModStorage.SetValue(!success || !CheckShouldLoadFromCD());
                 if (!UseModStorage)
                 {
-                    var data = block.CustomData;
-                    var success = ini_helper_.TryParse(data);
-                    if (success && CheckShouldLoadFromCD())
-                    {
-                        stored = LCDSettings.LoadFrom(ini_helper_, sections_cache);
-                    }
-                    else
-                    {
-                        stored = new LCDSettings();
-                        if (success || data.Length == 0)
-                        {
-                            UseModStorage = true;
-                        }
-                        else
-                        {
-                            Log.Info($"Failed to load custom data config for block: {block.CustomName}, defaulting to mod storage with empty config");
-                        }
-                    }
+                    stored = LCDSettings.LoadFrom(ini_helper_, sections_cache);
                 }
-                else
+                else if (block.Storage?.ContainsKey(LCDSettings.modStorageId) ?? false)
                 {
                     stored = LCDSettings.LoadFrom(block.Storage);
+                } else if (!success) { 
+                    Log.Info($"Failed to load custom data config for block: {block.CustomName}, defaulting to mod storage with empty config");
                 }
 
                 if (stored == null)
                 {
                     stored = new LCDSettings();
                 }
-
-                Settings = stored;
             }
             catch (Exception e)
             {
                 ReportErr("Failed to load config", e);
-                if (Settings == null)
+                useModStorage.SetValue(true);
+                if (stored == null)
                 {
-                    Settings = new LCDSettings();
-                    UseModStorage = true;
+                    stored = new LCDSettings();
                 }
             }
-
+            Settings = stored;
         }
         public void SaveData(bool sync = true)
         {
