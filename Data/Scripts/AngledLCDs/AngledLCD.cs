@@ -30,6 +30,8 @@ using VRage.ModAPI;
 using VRage.ObjectBuilders;
 using VRage.Utils;
 using VRageMath;
+using SENetworkAPI;
+
 
 namespace Natomic.AngledLCDs
 {
@@ -45,17 +47,35 @@ namespace Natomic.AngledLCDs
         private bool positionUnchanged = true;
         private bool originValid = false;
 
-        private bool useModStorage = false;
+        private NetSync<bool> useModStorage;
 
         private static bool controls_created_ = false;
         private StringBuilder animationTicksStr = new StringBuilder();
         private StringBuilder stageNameStr = new StringBuilder();
         private List<AnimationStage> selectedStages = new List<AnimationStage>();
 
+
+        private NetSync<LCDSettings> netSettings_;
         private AnimationStage current_stage_;
-        private LCDSettings settings;
+        private LCDSettings Settings
+        {
+            get { return netSettings_.Value; }
+            set
+            {
+                if (value == null)
+                {
+                    Log.Error("tried to set settings to null");
+                    netSettings_.Value = new LCDSettings();
+                }
+                else
+                {
+                    netSettings_.Value = value;
+                }
+            }
+        }
         private AnimationController animationCtrl;
         private LCDSettings.AnimationChain currentAnimation;
+        private const string MODNAME = "Adjustable LCDs";
 
 
 
@@ -72,7 +92,7 @@ namespace Natomic.AngledLCDs
         {
             set
             {
-                settings.ActiveStage = settings.Stages.IndexOf(value);
+                Settings.ActiveStage = Settings.Stages.IndexOf(value);
                 current_stage_ = value;
             }
             get
@@ -84,14 +104,14 @@ namespace Natomic.AngledLCDs
         {
             set
             {
-                settings.SelectedStep = settings.Steps.IndexOf(value);
+                Settings.SelectedStep = Settings.Steps.IndexOf(value);
                 currentAnimation = value;
             }
             get
             {
-                if (currentAnimation == null && settings.SelectedStep < settings.Steps.Count)
+                if (currentAnimation == null && Settings.SelectedStep < Settings.Steps.Count)
                 {
-                    currentAnimation = settings.Steps[settings.SelectedStep];
+                    currentAnimation = Settings.Steps[Settings.SelectedStep];
                 }
                 return currentAnimation;
             }
@@ -101,18 +121,18 @@ namespace Natomic.AngledLCDs
         {
             set
             {
-                if (value && !useModStorage)
+                if (value)
                 {
                     MigrateToModStore();
                 }
-                else if (!value && useModStorage)
+                else
                 {
                     MigrateToCustomDataStore();
                 }
             }
             get
             {
-                return useModStorage;
+                return useModStorage.Value;
             }
         }
 
@@ -216,13 +236,17 @@ namespace Natomic.AngledLCDs
                 return (float)current_stage_.Z;
             }
         }
-        public bool CanSafelyStoreInCD => settings.Steps.Count == 0 && !CustomRotOrigin && settings.Stages.Count == 1;
+        public bool CanSafelyStoreInCD => Settings.Steps.Count == 0 && !CustomRotOrigin && Settings.Stages.Count == 1;
         private Matrix origin_;
         private readonly MyIni ini_helper_ = new MyIni();
 
         private void MigrateToModStore()
         {
-            useModStorage = true;
+            if (useModStorage.Value != true)
+            {
+                useModStorage.Value = true;
+            }
+
             LCDSettings.ReloadSectionsCache(ini_helper_, sections_cache);
 
             foreach (var sect in sections_cache)
@@ -234,7 +258,10 @@ namespace Natomic.AngledLCDs
         }
         private void MigrateToCustomDataStore()
         {
-            useModStorage = false;
+            if (useModStorage.Value != false)
+            {
+                useModStorage.Value = false;
+            }
 
             block.Storage?.Remove(LCDSettings.modStorageId);
             SaveData();
@@ -243,8 +270,10 @@ namespace Natomic.AngledLCDs
 
         public override void Init(MyObjectBuilder_EntityBase objectBuilder)
         {
+            
             block = (T)Entity;
             NeedsUpdate = MyEntityUpdateEnum.BEFORE_NEXT_FRAME;
+            
 
             block.Hierarchy.OnParentChanged += (p1, p2) => OnMergeblockConnect();
         }
@@ -263,12 +292,12 @@ namespace Natomic.AngledLCDs
             {
                 return;
             }
-            var nextIdx = settings.Steps.IndexOf(currentAnimation) - 1;
+            var nextIdx = Settings.Steps.IndexOf(currentAnimation) - 1;
             if (nextIdx < 0)
             {
                 return;
             }
-            currentAnimation = settings.Steps[nextIdx];
+            currentAnimation = Settings.Steps[nextIdx];
             if (animationCtrl?.Valid ?? false) StartAnimation();
         }
         private void IncSelAnimation()
@@ -277,12 +306,12 @@ namespace Natomic.AngledLCDs
             {
                 return;
             }
-            var nextIdx = settings.Steps.IndexOf(currentAnimation) + 1;
-            if (nextIdx >= settings.Steps.Count)
+            var nextIdx = Settings.Steps.IndexOf(currentAnimation) + 1;
+            if (nextIdx >= Settings.Steps.Count)
             {
                 return;
             }
-            currentAnimation = settings.Steps[nextIdx];
+            currentAnimation = Settings.Steps[nextIdx];
             if (animationCtrl?.Valid ?? false) StartAnimation();
         }
         private static void CreateTermControls()
@@ -303,7 +332,7 @@ namespace Natomic.AngledLCDs
             TerminalHelper.AddTermSlider<T>("zffs_slider", "Location offset left/right", "Position left/right", -10, 10, (b, v) => b.LeftOffset = v, b => b.LeftOffset);
             TerminalHelper.AddTermSlider<T>("yffs_slider", "Location offset up/down", "Position up/down", -10, 10, (b, v) => b.UpOffset = v, b => b.UpOffset);
 
-            AddEnabled(logic => logic != null && (!logic.useModStorage || logic.CanSafelyStoreInCD), 
+            AddEnabled(logic => logic != null && (!logic.UseModStorage || logic.CanSafelyStoreInCD), 
                 TerminalHelper.AddTermChbox<T>(
                     "modstore_chbox", 
                     "Use mod storage", "Untick to select custom data, it persists even when the mod isn't loaded but may cause conflicts with some scripts. Most features are disabled without mod storage and it cannot be disabled while these are in use to prevent data loss", 
@@ -326,7 +355,7 @@ namespace Natomic.AngledLCDs
 
             TerminalHelper.AddTermListSel<T>("aniframes_sel", "Stages", "Stages optionally used for animations", (b, content, sel) =>
             {
-                foreach (var stage in b.settings.Stages)
+                foreach (var stage in b.Settings.Stages)
                 {
                     if (stage.Name.Length == 0)
                     {
@@ -349,16 +378,16 @@ namespace Natomic.AngledLCDs
                 TerminalHelper.RefreshAll();
                 b.SaveData();
             }, 5, true);
-            AddEnabled(lcd => lcd != null && (lcd.selectedStages.Count > 0 && lcd.selectedStages.Count < lcd.settings.Stages.Count), TerminalHelper.AddTermBtn<T>("anistage_rm_btn", "Remove stage", "Remove saved stage", lcd =>
+            AddEnabled(lcd => lcd != null && (lcd.selectedStages.Count > 0 && lcd.selectedStages.Count < lcd.Settings.Stages.Count), TerminalHelper.AddTermBtn<T>("anistage_rm_btn", "Remove stage", "Remove saved stage", lcd =>
             {
-                if (lcd.selectedStages.Count < lcd.settings.Stages.Count)
+                if (lcd.selectedStages.Count < lcd.Settings.Stages.Count)
                 {
-                    lcd.settings.Stages.RemoveAll(s => lcd.selectedStages.Contains(s));
+                    lcd.Settings.Stages.RemoveAll(s => lcd.selectedStages.Contains(s));
                 }
                 lcd.selectedStages.Clear();
-                if (!lcd.settings.Stages.Contains(lcd.CurrentStage))
+                if (!lcd.Settings.Stages.Contains(lcd.CurrentStage))
                 {
-                    lcd.CurrentStage = lcd.settings.Stages[0];
+                    lcd.CurrentStage = lcd.Settings.Stages[0];
                 }
                 TerminalHelper.RefreshAll();
                 lcd.SaveData();
@@ -371,7 +400,7 @@ namespace Natomic.AngledLCDs
                 TerminalHelper.AddTermBtn<T>("anistep_add", "Add step", "Add animation step", lcd => lcd.AddAnimationStep())));
             CtrlReqMStore(TerminalHelper.AddTermListSel<T>("anisteps_list", "Steps", "Animation steps", (b, content, sel) =>
                 {
-                    foreach (var step in b.settings.Steps)
+                    foreach (var step in b.Settings.Steps)
                     {
                         var item = new MyTerminalControlListBoxItem(MyStringId.GetOrCompute(step.ToString()), MyStringId.GetOrCompute(""), step);
                         content.Add(item);
@@ -415,11 +444,8 @@ namespace Natomic.AngledLCDs
         private static void CtrlReqMStore(IMyTerminalControl ctrl)
         {
             var ctrlEnable = (Func<IMyTerminalBlock, bool>)ctrl.Enabled.Clone();
-            ctrl.Enabled = b =>
-            {
-                return ctrlEnable(b) &&
-                (b.GameLogic.GetAs<AngledLCD<T>>()?.useModStorage ?? false);
-            };
+            ctrl.Enabled = b => ctrlEnable(b) &&
+                                (b.GameLogic.GetAs<AngledLCD<T>>()?.UseModStorage ?? false);
         }
         private void AddAnimationStep()
         {
@@ -440,7 +466,7 @@ namespace Natomic.AngledLCDs
                     var to = stages[n + 1];
                     steps.Add(new AnimationStep { StageFrom = from.Name, StageTo = to.Name, Ticks = (uint)timestep });
                 }
-                settings.Steps.Add(new LCDSettings.AnimationChain { Steps = steps });
+                Settings.Steps.Add(new LCDSettings.AnimationChain { Steps = steps });
                 selectedStages.Clear();
                 TerminalHelper.RefreshAll();
                 SaveData();
@@ -456,13 +482,13 @@ namespace Natomic.AngledLCDs
             {
                 return;
             }
-            if (settings.Stages.Count == 1 && settings.Stages[0].Name == "") // Special case: first stage added for this
+            if (Settings.Stages.Count == 1 && Settings.Stages[0].Name == "") // Special case: first stage added for this
             {
-                settings.Stages[0].Name = stageNameStr.ToString();
+                Settings.Stages[0].Name = stageNameStr.ToString();
             }
             else
             {
-                settings.Stages.Add(new AnimationStage { Name = stageNameStr.ToString() });
+                Settings.Stages.Add(new AnimationStage { Name = stageNameStr.ToString() });
             }
             stageNameStr.Clear();
             TerminalHelper.RefreshAll();
@@ -474,7 +500,7 @@ namespace Natomic.AngledLCDs
             {
                 return;
             }
-            settings.Steps.Remove(currentAnimation);
+            Settings.Steps.Remove(currentAnimation);
             currentAnimation = null;
             TerminalHelper.RefreshAll();
             SaveData();
@@ -488,7 +514,7 @@ namespace Natomic.AngledLCDs
             }
             if (animationCtrl == null)
             {
-                animationCtrl = new AnimationController(settings.Stages);
+                animationCtrl = new AnimationController(Settings.Stages);
             }
             animationCtrl.Reset(currentAnimation.Steps);
             NeedsUpdate |= MyEntityUpdateEnum.EACH_FRAME;
@@ -511,18 +537,48 @@ namespace Natomic.AngledLCDs
                 CreateTermControls();
             }
 
+            if (!NetworkAPI.IsInitialized)
+            {
+
+                ushort comChannel = 5512;
+                NetworkAPI.Init(comChannel, MODNAME);
+            }
+
+            useModStorage = new NetSync<bool>(this, TransferType.Both, false, false);
+            netSettings_ = new NetSync<LCDSettings>(this, TransferType.Both, new LCDSettings(), false);
+            netSettings_.ValueChangedByNetwork += (old, curr, id) =>
+            {
+                TerminalHelper.RefreshAll();
+                if (MyAPIGateway.Multiplayer.IsServer)
+                {
+                    SaveData(false);
+                }
+
+                positionUnchanged = false;
+            };
+            useModStorage.ValueChangedByNetwork += (old, curr, id) =>
+            {
+                if (!MyAPIGateway.Multiplayer.IsServer)
+                {
+                    UseModStorage = curr;
+                }
+                TerminalHelper.RefreshAll();
+            };
+
             if (block.CubeGrid?.Physics == null) // ignore projected and other non-physical grids
                 return;
 
             NeedsUpdate = MyEntityUpdateEnum.EACH_10TH_FRAME;
             LoadData();
-            if (settings.Stages.Count == 0)
+            if (Settings.Stages.Count == 0)
             {
-                settings.Stages.Add(new AnimationStage());
+                Settings.Stages.Add(new AnimationStage());
             }
-            current_stage_ = settings.Stages[settings.ActiveStage];
+
+            current_stage_ = Settings.Stages[Settings.ActiveStage];
             TerminalHelper.RefreshAll();
         }
+
         private void ReportErr(string msg, Exception e)
         {
             Log.Error($"{msg} (block: {block.Name}, id: {block.EntityId}) {e.Message}\n{e.StackTrace}");
@@ -538,18 +594,19 @@ namespace Natomic.AngledLCDs
         {
             try
             {
-                useModStorage = block.Storage?.ContainsKey(LCDSettings.modStorageId) ?? false;
+                LCDSettings stored = null;
+                useModStorage.SetValue(block.Storage?.ContainsKey(LCDSettings.modStorageId) ?? false);
                 if (!UseModStorage)
                 {
                     var data = block.CustomData;
                     var success = ini_helper_.TryParse(data);
                     if (success && CheckShouldLoadFromCD())
                     {
-                        settings = LCDSettings.LoadFrom(ini_helper_, sections_cache);
+                        stored = LCDSettings.LoadFrom(ini_helper_, sections_cache);
                     }
                     else
                     {
-                        settings = new LCDSettings();
+                        stored = new LCDSettings();
                         if (success || data.Length == 0)
                         {
                             UseModStorage = true;
@@ -562,21 +619,28 @@ namespace Natomic.AngledLCDs
                 }
                 else
                 {
-                    settings = LCDSettings.LoadFrom(block.Storage);
+                    stored = LCDSettings.LoadFrom(block.Storage);
                 }
+
+                if (stored == null)
+                {
+                    stored = new LCDSettings();
+                }
+
+                Settings = stored;
             }
             catch (Exception e)
             {
                 ReportErr("Failed to load config", e);
-                if (settings == null)
+                if (Settings == null)
                 {
-                    settings = new LCDSettings();
+                    Settings = new LCDSettings();
                     UseModStorage = true;
                 }
             }
 
         }
-        public void SaveData()
+        public void SaveData(bool sync = true)
         {
             try
             {
@@ -589,12 +653,16 @@ namespace Natomic.AngledLCDs
                         return;
                     }
 
-                    settings.SaveTo(ini_helper_);
+                    Settings.SaveTo(ini_helper_);
                     block.CustomData = ini_helper_.ToString();
                 }
                 else
                 {
-                    settings.SaveTo(block.Storage);
+                    Settings.SaveTo(block.Storage);
+                    if (sync)
+                    {
+                        netSettings_.Push();
+                    }
                 }
             }
             catch (Exception e)
