@@ -52,7 +52,7 @@ namespace Natomic.AngledLCDs
         private static bool controls_created_ = false;
         private StringBuilder animationTicksStr = new StringBuilder();
         private StringBuilder stageNameStr = new StringBuilder();
-        private List<AnimationStage> selectedStages = new List<AnimationStage>();
+        private List<int> selectedStages = new List<int>();
 
 
         private NetSync<LCDSettings> netSettings_;
@@ -349,6 +349,7 @@ namespace Natomic.AngledLCDs
 
             TerminalHelper.AddTermListSel<T>("aniframes_sel", "Stages", "Stages optionally used for animations", (b, content, sel) =>
             {
+                int n = 0;
                 foreach (var stage in b.Settings.Stages)
                 {
                     if (stage.Name.Length == 0)
@@ -357,10 +358,12 @@ namespace Natomic.AngledLCDs
                     }
                     var item = new MyTerminalControlListBoxItem(MyStringId.GetOrCompute(stage.Name), MyStringId.GetOrCompute(stage.Name), stage);
                     content.Add(item);
-                    if (b.selectedStages.Contains(stage))
+                    if (b.selectedStages.Contains(n))
                     {
                         sel.Add(item);
                     }
+
+                    ++n;
                 }
 
             }, (b, items) =>
@@ -368,7 +371,7 @@ namespace Natomic.AngledLCDs
                 b.CurrentStage = (AnimationStage)items[0].UserData;
                 b.positionUnchanged = false;
                 b.selectedStages.Clear();
-                b.selectedStages.AddRange(items.Select(item => (AnimationStage)item.UserData));
+                b.selectedStages.AddRange(items.Select(item => b.Settings.Stages.IndexOf((AnimationStage)item.UserData)));
                 TerminalHelper.RefreshAll();
                 b.SaveData();
             }, 5, true);
@@ -376,7 +379,10 @@ namespace Natomic.AngledLCDs
             {
                 if (lcd.selectedStages.Count < lcd.Settings.Stages.Count)
                 {
-                    lcd.Settings.Stages.RemoveAll(s => lcd.selectedStages.Contains(s));
+                    foreach (var idx in lcd.selectedStages)
+                    {
+                        lcd.Settings.Stages.RemoveAtFast(idx);
+                    }
                 }
                 lcd.selectedStages.Clear();
                 if (!lcd.Settings.Stages.Contains(lcd.CurrentStage))
@@ -456,8 +462,8 @@ namespace Natomic.AngledLCDs
                 var steps = new List<AnimationStep>();
                 for (var n = 0; n != stages.Count - 1; ++n)
                 {
-                    var from = stages[n];
-                    var to = stages[n + 1];
+                    var from = Settings.Stages[stages[n]];
+                    var to = Settings.Stages[stages[n + 1]];
                     steps.Add(new AnimationStep { StageFrom = from.Name, StageTo = to.Name, Ticks = (uint)timestep });
                 }
                 Settings.Steps.Add(new LCDSettings.AnimationChain { Steps = steps });
