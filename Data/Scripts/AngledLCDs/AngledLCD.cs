@@ -686,7 +686,7 @@ namespace Natomic.AngledLCDs
                 }
                 else
                 {
-                    Settings.SaveTo(block.Storage);
+                    Settings.SaveTo(block);
                     if (sync)
                     {
                         netSettings_.Push();

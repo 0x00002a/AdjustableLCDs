@@ -87,11 +87,13 @@ namespace Natomic.AngledLCDs
             return MyAPIGateway.Utilities.SerializeFromBinary<LCDSettings>(binary);
         }
 
-        public void SaveTo(MyModStorageComponentBase store)
+        public void SaveTo(IMyFunctionalBlock b)
         {
+            var store = b.Storage;
             if (store == null)
             {
                 store = new MyModStorageComponent();
+                b.Storage = store;
             }
             var binary = MyAPIGateway.Utilities.SerializeToBinary(this);
             store[modStorageId] = Convert.ToBase64String(binary);
