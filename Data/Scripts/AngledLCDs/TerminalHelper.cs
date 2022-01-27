@@ -45,6 +45,10 @@ namespace Natomic.AngledLCDs
             box.Multiselect = multiSel;
             box.ListContent = (b, content, sel) =>
             {
+                if (b?.GameLogic == null)
+                {
+                    return;
+                }
                 var lcd = b.GameLogic.GetAs<AngledLCD<T>>();
                 if (lcd == null)
                 {
@@ -78,6 +82,11 @@ namespace Natomic.AngledLCDs
             box.Tooltip = MyStringId.GetOrCompute(tooltip);
             box.Getter = b =>
             {
+                if (b?.GameLogic == null)
+                {
+                    return false;
+                }
+
                 var lcd = b.GameLogic.GetAs<AngledLCD<T>>();
                 if (lcd == null)
                 {
@@ -91,6 +100,11 @@ namespace Natomic.AngledLCDs
             };
             box.Setter = (b, val) =>
             {
+                if (b?.GameLogic == null)
+                {
+                    return;
+                }
+
                 var lcd = b.GameLogic.GetAs<AngledLCD<T>>();
                 if (lcd == null)
                 {
@@ -115,7 +129,10 @@ namespace Natomic.AngledLCDs
             txtbox.Tooltip = MyStringId.GetOrCompute(tooltip);
             txtbox.Enabled = b => b.GameLogic.GetAs<AngledLCD<T>>() != null;
             txtbox.Action = b => { 
-                var lcd = b.GameLogic.GetAs<AngledLCD<T>>();
+                var lcd = b?.GameLogic?.GetAs<AngledLCD<T>>();
+                if (lcd == null) {
+                    return;
+                }
                 act(lcd);
             };
 
@@ -132,12 +149,20 @@ namespace Natomic.AngledLCDs
             txtbox.Enabled = b => b.GameLogic.GetAs<AngledLCD<T>>() != null;
             txtbox.Getter = b =>
             {
-                var lcd = b.GameLogic.GetAs<AngledLCD<T>>();
+                var lcd = b?.GameLogic?.GetAs<AngledLCD<T>>();
+                if (lcd == null)
+                {
+                    return new StringBuilder();
+                }
                 return get(lcd);
             };
             txtbox.Setter = (b, val) =>
             {
-                var lcd = b.GameLogic.GetAs<AngledLCD<T>>();
+                var lcd = b?.GameLogic?.GetAs<AngledLCD<T>>();
+                if (lcd == null)
+                {
+                    return;
+                }
                 set(lcd, val);
             };
 
@@ -153,6 +178,11 @@ namespace Natomic.AngledLCDs
             slider.SetLimits(lower, upper);
             slider.Getter = b =>
             {
+                if (b.GameLogic == null)
+                {
+                    return 0.0f;
+                }
+                
                 var lcd = b.GameLogic.GetAs<AngledLCD<T>>();
                 if (lcd == null)
                 {
@@ -166,6 +196,10 @@ namespace Natomic.AngledLCDs
             };
             slider.Setter = (b, val) =>
             {
+                if (b.GameLogic == null)
+                {
+                    return;
+                }
                 var lcd = b.GameLogic.GetAs<AngledLCD<T>>();
                 if (lcd == null)
                 {
@@ -179,6 +213,10 @@ namespace Natomic.AngledLCDs
             };
             slider.Writer = (b, str) =>
             {
+                if (b.GameLogic == null)
+                {
+                    return;
+                }
                 var lcd = b.GameLogic.GetAs<AngledLCD<T>>();
                 if (lcd == null)
                 {

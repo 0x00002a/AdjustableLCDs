@@ -343,12 +343,16 @@ namespace Natomic.AngledLCDs
             TerminalHelper.AddTermTxtbox<T>("anistagename_ent", "Stage name", "Name for new stage", (b, v) => b.stageNameStr = v, b => b.stageNameStr);
             AddEnabled(
                 lcd => lcd != null && lcd.UseModStorage,
-                TerminalHelper.AddTermBtn<T>("anistage_add_btn", "Add stage", "Add saved stage", lcd => lcd.AddStage())
+                TerminalHelper.AddTermBtn<T>("anistage_add_btn", "Add stage", "Add saved stage", lcd => lcd?.AddStage())
                 );
 
 
             TerminalHelper.AddTermListSel<T>("aniframes_sel", "Stages", "Stages optionally used for animations", (b, content, sel) =>
             {
+                if (b == null)
+                {
+                    return;
+                }
                 int n = 0;
                 foreach (var stage in b.Settings.Stages)
                 {
@@ -368,6 +372,10 @@ namespace Natomic.AngledLCDs
 
             }, (b, items) =>
             {
+                if (b == null)
+                {
+                    return;
+                }
                 b.CurrentStage = (AnimationStage)items[0].UserData;
                 b.positionUnchanged = false;
                 b.selectedStages.Clear();
@@ -377,6 +385,10 @@ namespace Natomic.AngledLCDs
             }, 5, true);
             AddEnabled(lcd => lcd != null && (lcd.selectedStages.Count > 0 && lcd.selectedStages.Count < lcd.Settings.Stages.Count), TerminalHelper.AddTermBtn<T>("anistage_rm_btn", "Remove stage", "Remove saved stage", lcd =>
             {
+                if (lcd == null)
+                {
+                    return;
+                }
                 if (lcd.selectedStages.Count < lcd.Settings.Stages.Count)
                 {
                     foreach (var idx in lcd.selectedStages)
@@ -400,6 +412,10 @@ namespace Natomic.AngledLCDs
                 TerminalHelper.AddTermBtn<T>("anistep_add", "Add step", "Add animation step", lcd => lcd.AddAnimationStep())));
             CtrlReqMStore(TerminalHelper.AddTermListSel<T>("anisteps_list", "Steps", "Animation steps", (b, content, sel) =>
                 {
+                    if (b == null)
+                    {
+                        return;
+                    }
                     foreach (var step in b.Settings.Steps)
                     {
                         var item = new MyTerminalControlListBoxItem(MyStringId.GetOrCompute(step.ToString()), MyStringId.GetOrCompute(""), step);
@@ -412,6 +428,10 @@ namespace Natomic.AngledLCDs
 
                 }, (b, items) =>
                 {
+                    if (b == null)
+                    {
+                        return;
+                    }
                     b.CurrentAnimation = (LCDSettings.AnimationChain)items[0].UserData;
                     b.SaveData();
                     TerminalHelper.RefreshAll();
@@ -427,7 +447,7 @@ namespace Natomic.AngledLCDs
             var savedVis = (Func<IMyTerminalBlock, bool>)ctrl.Visible.Clone();
             ctrl.Enabled = b =>
             {
-                return savedVis(b) && enable(b.GameLogic.GetAs<AngledLCD<T>>());
+                return savedVis(b) && enable(b?.GameLogic?.GetAs<AngledLCD<T>>());
             };
             return ctrl;
 
@@ -437,7 +457,7 @@ namespace Natomic.AngledLCDs
             var savedEnable = (Func<IMyTerminalBlock, bool>)ctrl.Enabled.Clone();
             ctrl.Enabled = b =>
             {
-                return savedEnable(b) && enable(b.GameLogic.GetAs<AngledLCD<T>>());
+                return savedEnable(b) && enable(b?.GameLogic?.GetAs<AngledLCD<T>>());
             };
             return ctrl;
         }
@@ -445,7 +465,7 @@ namespace Natomic.AngledLCDs
         {
             var ctrlEnable = (Func<IMyTerminalBlock, bool>)ctrl.Enabled.Clone();
             ctrl.Enabled = b => ctrlEnable(b) &&
-                                (b.GameLogic.GetAs<AngledLCD<T>>()?.UseModStorage ?? false);
+                                (b?.GameLogic?.GetAs<AngledLCD<T>>()?.UseModStorage ?? false);
         }
         private void AddAnimationStep()
         {
@@ -577,7 +597,6 @@ namespace Natomic.AngledLCDs
             EnsureDefaultStageExists();
 
             current_stage_ = Settings.Stages[Settings.ActiveStage];
-            TerminalHelper.RefreshAll();
         }
 
         private void ReportErr(string msg, Exception e)
