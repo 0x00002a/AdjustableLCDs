@@ -72,6 +72,7 @@ namespace Natomic.AngledLCDs
 
 
         private readonly List<string> sections_cache = new List<string>();
+        private readonly List<int> indexes_cache = new List<int>();
 
         private bool CustomRotOrigin
         {
@@ -370,19 +371,7 @@ namespace Natomic.AngledLCDs
                     ++n;
                 }
 
-            }, (b, items) =>
-            {
-                if (b == null)
-                {
-                    return;
-                }
-                b.CurrentStage = (AnimationStage)items[0].UserData;
-                b.positionUnchanged = false;
-                b.selectedStages.Clear();
-                b.selectedStages.AddRange(items.Select(item => b.Settings.Stages.IndexOf((AnimationStage)item.UserData)));
-                TerminalHelper.RefreshAll();
-                b.SaveData();
-            }, 5, true);
+            }, (b, items) => b?.OnStagesSelectedUpdate(items), 5, true);
             AddEnabled(lcd => lcd != null && (lcd.selectedStages.Count > 0 && lcd.selectedStages.Count < lcd.Settings.Stages.Count), TerminalHelper.AddTermBtn<T>("anistage_rm_btn", "Remove stage", "Remove saved stage", lcd =>
             {
                 if (lcd == null)
@@ -442,6 +431,22 @@ namespace Natomic.AngledLCDs
                 AddEnabled(lcd => lcd != null && lcd.CurrentAnimation != null, 
             TerminalHelper.AddTermBtn<T>("anistart_btn", "Start animation", "Starts the selected animation", lcd => lcd.StartAnimation())));
         }
+
+        private void OnStagesSelectedUpdate(List<MyTerminalControlListBoxItem> items)
+        {
+            if (items.Count == 1) {
+                CurrentStage = (AnimationStage)items[0].UserData;
+            }
+
+            indexes_cache.Clear();
+            indexes_cache.AddRange(items.Select(item => Settings.Stages.IndexOf((AnimationStage)item.UserData)));
+            positionUnchanged = false;
+            selectedStages.RemoveAll(v => !indexes_cache.Contains(v));
+            selectedStages.Add(indexes_cache[indexes_cache.Count - 1]);
+            TerminalHelper.RefreshAll();
+            SaveData();
+        }
+            
         private static IMyTerminalControl AddVisible(Func<AngledLCD<T>, bool> enable, IMyTerminalControl ctrl)
         {
             var savedVis = (Func<IMyTerminalBlock, bool>)ctrl.Visible.Clone();
