@@ -290,8 +290,9 @@ namespace Natomic.AngledLCDs
             var nextIdx = Settings.Steps.IndexOf(currentAnimation) - 1;
             if (nextIdx < 0)
             {
-                return;
+                nextIdx = Settings.Steps.Count - 1;
             }
+            
             currentAnimation = Settings.Steps[nextIdx];
             if (animationCtrl?.Valid ?? false) StartAnimation();
         }
@@ -304,7 +305,7 @@ namespace Natomic.AngledLCDs
             var nextIdx = Settings.Steps.IndexOf(currentAnimation) + 1;
             if (nextIdx >= Settings.Steps.Count)
             {
-                return;
+                nextIdx = 0;
             }
             currentAnimation = Settings.Steps[nextIdx];
             if (animationCtrl?.Valid ?? false) StartAnimation();
