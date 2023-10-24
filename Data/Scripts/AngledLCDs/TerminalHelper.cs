@@ -12,6 +12,11 @@ namespace Natomic.AngledLCDs
     static class TerminalHelper
     {
         private static List<IMyTerminalControl> controls_ = new List<IMyTerminalControl>();
+        
+        private static Func<IMyTerminalBlock, bool> genEnabledCheck<T>() where T : IMyFunctionalBlock
+        {
+            return  b => b?.GameLogic?.GetAs<AngledLCD<T>>() != null;
+        }
 
         public static void RefreshAll()
         {
@@ -34,6 +39,7 @@ namespace Natomic.AngledLCDs
             MyAPIGateway.TerminalControls.AddAction<T>(act);
             return act;
         }
+
         public static IMyTerminalControlListbox AddTermListSel<T>(string name, string title, string tooltip, Action<AngledLCD<T>, List<MyTerminalControlListBoxItem>, List<MyTerminalControlListBoxItem>> setContent, Action<AngledLCD<T>, List<MyTerminalControlListBoxItem>> onSel, int visibleRows, bool multiSel)
             where T: IMyFunctionalBlock
         {
@@ -127,7 +133,7 @@ namespace Natomic.AngledLCDs
             var txtbox = MyAPIGateway.TerminalControls.CreateControl<IMyTerminalControlButton, T>(name);
             txtbox.Title = MyStringId.GetOrCompute(title);
             txtbox.Tooltip = MyStringId.GetOrCompute(tooltip);
-            txtbox.Enabled = b => b.GameLogic.GetAs<AngledLCD<T>>() != null;
+            txtbox.Enabled = genEnabledCheck<T>();
             txtbox.Action = b => { 
                 var lcd = b?.GameLogic?.GetAs<AngledLCD<T>>();
                 if (lcd == null) {
@@ -146,7 +152,7 @@ namespace Natomic.AngledLCDs
             var txtbox = MyAPIGateway.TerminalControls.CreateControl<IMyTerminalControlTextbox, T>(name);
             txtbox.Title = MyStringId.GetOrCompute(title);
             txtbox.Tooltip = MyStringId.GetOrCompute(tooltip);
-            txtbox.Enabled = b => b.GameLogic.GetAs<AngledLCD<T>>() != null;
+            txtbox.Enabled = genEnabledCheck<T>();
             txtbox.Getter = b =>
             {
                 var lcd = b?.GameLogic?.GetAs<AngledLCD<T>>();
